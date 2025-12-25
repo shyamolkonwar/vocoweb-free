@@ -195,3 +195,60 @@ async def voice_to_website(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Website generation failed: {str(e)}")
+
+
+class AsyncVoiceGenerateResponse(BaseModel):
+    """Response for async voice-to-website generation."""
+    task_id: str
+    message: str
+
+
+@router.post("/voice/generate/async", response_model=AsyncVoiceGenerateResponse)
+async def voice_to_website_async(
+    audio: UploadFile = File(...),
+    language: str = Form(default="auto")
+):
+    """
+    Generate website from voice input asynchronously.
+    
+    Returns immediately with a task_id.
+    Poll /api/tasks/{task_id} to check status.
+    """
+    import base64
+    from app.workers.tasks import voice_to_website_task
+    
+    # Validate file type
+    content_type = audio.content_type or ""
+    if not is_supported_format(content_type):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported audio format: {content_type}"
+        )
+    
+    # Read audio data
+    try:
+        audio_data = await audio.read()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to read audio: {str(e)}")
+    
+    if len(audio_data) > 25 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Audio file too large. Maximum size is 25MB.")
+    
+    # Encode audio as base64 for Celery (JSON serializable)
+    audio_b64 = base64.b64encode(audio_data).decode("utf-8")
+    
+    # Determine language
+    lang = "en" if language == "auto" else language
+    
+    # Queue the task
+    task = voice_to_website_task.delay(
+        audio_data_b64=audio_b64,
+        filename=audio.filename or "audio.webm",
+        language=lang
+    )
+    
+    return AsyncVoiceGenerateResponse(
+        task_id=task.id,
+        message="Voice-to-website generation started. Poll /api/tasks/{task_id} for status."
+    )
+

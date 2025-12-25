@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     rate_limit_requests: int = 5
     rate_limit_window_seconds: int = 3600  # 1 hour
     
+    # Redis / Celery
+    redis_url: str = "redis://localhost:6379/0"
+    redis_backend_url: str = "redis://localhost:6379/1"
+    
     class Config:
         env_file = Path(__file__).parent.parent.parent / ".env"
         env_file_encoding = "utf-8"

@@ -1,4 +1,4 @@
-# 🧱 6-PHASE MVP BUILD PLAN
+# 🧱 8-PHASE MVP BUILD PLAN
 
 *(Landing Page → Full Python Backend MVP)*
 
@@ -175,7 +175,7 @@ Audio
 
 ## **PHASE 5 — Website Editing + Redesign (Week 5)**
 
-🎯 *Retention + monetization*
+🎯 *Retention + value addition*
 
 ![Image](https://assets.justinmind.com/wp-content/uploads/2018/11/rev-website-redesign-Justinmind.png)
 
@@ -208,13 +208,13 @@ URL
 ### Output
 
 ✅ Users come back
-✅ Clear paid feature
+✅ Clear value feature
 
 ---
 
-## **PHASE 6 — Monetization + Hardening (Week 6)**
+## **PHASE 6 — Free Tier + Abuse Control (Week 6)**
 
-🎯 *Turn MVP into a business*
+🎯 *Free tier with strict abuse control*
 
 ![Image](https://global-uploads.webflow.com/5f16d69f1760cdba99c3ce6e/606b27810f8ec65f779c429f_QEd76i9ge8e8nzb6BbnX_IrLqBQ9ZLDdDAHl80RfDCcQO-mb_K19JbvrQGu6epTKEqJJytdPSW-cW-Bl2v1fwL-fLf5edH_Ohn0EWts305ik4gYpQeLFOmal_RGP1NkOj7s6w3EZ.png)
 
@@ -224,28 +224,121 @@ URL
 
 ### What You Build
 
-* Pricing plans
-* Limits
-* Payments
-* Abuse control
+* Strict usage limits
+* Abuse control mechanisms
+* Monitoring and logging
 
 ### Features
 
-* Free vs Paid
-* Custom domain (paid)
-* Remove branding
-* Usage limits
+* Daily/monthly usage caps
+* IP-based rate limiting
+* Abuse detection (spam prevention)
+* User feedback and reporting
 
 ### Tech
 
-* Razorpay
 * Rate limits
 * Logging & monitoring
+* Abuse detection algorithms
 
 ### Output
 
-✅ Revenue ready
-✅ Scalable MVP
+✅ Secure free MVP
+✅ Abuse controlled
+
+---
+
+## **PHASE 7 — Supabase Integration (Week 7)**
+
+🎯 *Integrate Supabase across all phases*
+
+![Image](https://supabase.com/docs/img/supabase-logo-wordmark--dark.png)
+
+![Image](https://images.contentstack.io/v3/assets/blt23180bf2502c7444/blt7a8bd01e775813a3/5f3d05be6e9660261c55bada/Static_Website_-_Detailed_Architecture_.jpeg?disposition=download)
+
+![Image](https://miro.medium.com/v2/resize%3Afit%3A1200/1%2A2SQ_RsYLY-zO3JuB_p_SHA.gif)
+
+### What You Build
+
+* Supabase database schema
+* Tables for users, websites, leads
+* API integrations for all phases
+
+### Features
+
+* User authentication
+* Website data storage
+* Analytics and logging
+* Real-time updates
+
+### Backend Flow
+
+```
+All Phases
+ → Supabase Client
+ → Database Operations
+ → Data Persistence
+```
+
+### Python Additions
+
+* supabase_service.py
+* database_models.py
+
+### Output
+
+✅ Fully integrated Supabase
+✅ Data persistence across phases
+
+---
+
+## **PHASE 8 — Authentication System (Week 8)**
+
+🎯 *Secure user authentication and authorization*
+
+![Image](https://supabase.com/docs/img/supabase-logo-wordmark--dark.png)
+
+![Image](https://images.contentstack.io/v3/assets/blt23180bf2502c7444/blt7a8bd01e775813a3/5f3d05be6e9660261c55bada/Static_Website_-_Detailed_Architecture_.jpeg?disposition=download)
+
+![Image](https://miro.medium.com/v2/resize%3Afit%3A1200/1%2A2SQ_RsYLY-zO3JuB_p_SHA.gif)
+
+### What You Build
+
+* Supabase Auth setup
+* Login/Signup forms in frontend
+* Auth middleware in backend
+* Security rules and policies
+
+### Features
+
+* User registration and login
+* Password reset
+* Session management
+* Role-based access control
+
+### Backend Flow
+
+```
+User Request
+ → Auth Middleware
+ → Supabase Auth
+ → Secure Access
+```
+
+### Frontend Additions
+
+* Auth components (Login, Signup)
+* Protected routes
+
+### Backend Additions
+
+* auth_middleware.py
+* security_policies.py
+
+### Output
+
+✅ Secure authentication system
+✅ User accounts and sessions
 
 ---
 

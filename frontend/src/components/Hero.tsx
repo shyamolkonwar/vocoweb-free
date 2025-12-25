@@ -14,7 +14,9 @@ const content = {
     cta: 'Get Early Access',
     secondary: 'See how it works',
     comingSoon: 'Coming Soon',
-    badge: 'Built for local businesses'
+    badge: 'Built for local businesses',
+    haveWebsite: 'Already have a website?',
+    redesign: 'Redesign it \u2192'
   },
   hi: {
     headline: 'Voice या text से अपनी business website बनाएं।',
@@ -22,7 +24,9 @@ const content = {
     cta: 'Early Access पाएं',
     secondary: 'देखें कैसे काम करता है',
     comingSoon: 'जल्द आ रहा है',
-    badge: 'Local businesses के लिए बना'
+    badge: 'Local businesses के लिए बना',
+    haveWebsite: 'Website पहले से है?',
+    redesign: 'Redesign करें →'
   }
 };
 
@@ -75,6 +79,12 @@ export default function Hero({ language }: HeroProps) {
           >
             {t.secondary}
           </button>
+        </div>
+
+        {/* Redesign Link */}
+        <div className="redesign-link-container">
+          <span className="redesign-text">{t.haveWebsite}</span>
+          <a href="/redesign" className="redesign-link">{t.redesign}</a>
         </div>
 
         {/* Waitlist Form Modal */}

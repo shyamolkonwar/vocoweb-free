@@ -9,6 +9,12 @@ from .deploy import (
 )
 from .supabase import supabase_service
 from .rate_limiter import rate_limiter
+from .scraper import (
+    scrape_website,
+    validate_url,
+    ScrapedContent,
+    ScrapeError
+)
 
 __all__ = [
     "publish_website",
@@ -18,5 +24,10 @@ __all__ = [
     "get_site_by_subdomain",
     "PublishedSite",
     "supabase_service",
-    "rate_limiter"
+    "rate_limiter",
+    "scrape_website",
+    "validate_url",
+    "ScrapedContent",
+    "ScrapeError"
 ]
+

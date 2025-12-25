@@ -13,6 +13,7 @@ const content = {
         publish: "Publish Website",
         publishing: "Publishing...",
         editPrompt: "Edit with text",
+        editWebsite: "Edit Website",
         back: "← Back to edit",
         publishSuccess: "🎉 Your website is live!",
         visitSite: "Visit Website",
@@ -28,6 +29,7 @@ const content = {
         publish: "Website Publish करें",
         publishing: "Publish हो रहा है...",
         editPrompt: "Text से edit करें",
+        editWebsite: "Website Edit करें",
         back: "← Edit पर वापस",
         publishSuccess: "🎉 आपकी website live है!",
         visitSite: "Website देखें",
@@ -221,6 +223,12 @@ export default function PreviewPage() {
                             </div>
 
                             <div className="preview-actions">
+                                <a
+                                    href={`/editor/${id}`}
+                                    className="btn-secondary"
+                                >
+                                    ✏️ {t.editWebsite}
+                                </a>
                                 <button
                                     onClick={handleRegenerate}
                                     disabled={regenerating || publishing}

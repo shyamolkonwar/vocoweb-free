@@ -112,6 +112,34 @@ async def generate_website(request: GenerateRequest):
         raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
 
 
+class AsyncGenerateResponse(BaseModel):
+    """Response for async website generation."""
+    task_id: str
+    message: str
+
+
+@router.post("/generate/async", response_model=AsyncGenerateResponse)
+async def generate_website_async(request: GenerateRequest):
+    """
+    Generate a website asynchronously.
+    
+    Returns immediately with a task_id.
+    Poll /api/tasks/{task_id} to check status.
+    """
+    from app.workers.tasks import generate_website_task
+    
+    # Queue the task
+    task = generate_website_task.delay(
+        description=request.description,
+        language=request.language
+    )
+    
+    return AsyncGenerateResponse(
+        task_id=task.id,
+        message="Website generation started. Poll /api/tasks/{task_id} for status."
+    )
+
+
 @router.get("/preview/{website_id}")
 async def get_preview(website_id: str):
     """Get website preview by ID."""
