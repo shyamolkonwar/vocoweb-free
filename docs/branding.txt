@@ -1,0 +1,259 @@
+# 🎨 BRANDING SYSTEM — AI WEBSITE OPERATOR FOR LOCAL BUSINESSES
+
+## 1️⃣ Brand Positioning (Core)
+
+### What we are
+
+> **Your digital partner that builds and runs your business website for you.**
+
+### What we are NOT
+
+* Not a website builder
+* Not a design tool
+* Not a coding platform
+
+### Mental model for users
+
+> “Jaise accountant hota hai, waise hi website ka kaam ye sambhal lega.”
+
+---
+
+## 2️⃣ Brand Personality
+
+| Trait       | How it feels                                 |
+| ----------- | -------------------------------------------- |
+| Friendly    | Like a helpful local assistant               |
+| Trustworthy | Doesn’t confuse, doesn’t upsell aggressively |
+| Simple      | Explains things in plain language            |
+| Modern      | Clean, fast, mobile-first                    |
+| Respectful  | Never makes user feel “uneducated”           |
+
+**Tone rule:**
+
+> Never sound like a startup talking to investors.
+> Always sound like a human helping another human.
+
+---
+
+## 3️⃣ Brand Voice & Writing Style
+
+### Language
+
+* Simple English
+* Optional Hindi / Hinglish
+* Short sentences
+* No tech jargon
+
+### Example Tone
+
+❌ “Generate a responsive website using AI”
+✅ “Tell us about your business. We’ll build your website.”
+
+❌ “Deploy your site instantly”
+✅ “Your website will be live in one click.”
+
+---
+
+## 4️⃣ Brand Name Direction (If You Haven’t Finalized Yet)
+
+### Naming principles
+
+* Easy to pronounce
+* Works in Indian accents
+* Sounds trustworthy
+* Not overly “AI-ish”
+
+**Name styles that fit:**
+
+* Single-word Indian-feel
+* Meaningful but simple
+* Ends with comfort, not hype
+
+Examples (directional, not final):
+
+* **Sajao** (decorate)
+* **VyaparSite**
+* **Nirmaan**
+* **DukaanWeb**
+* **Setu** (bridge)
+* **Banalo** (make it)
+
+👉 Even if you pick a different name, the **brand logic stays same**.
+
+---
+
+## 5️⃣ Tagline Options
+
+Choose ONE style and stay consistent.
+
+### Trust-first
+
+* “Your business. Your website. Done.”
+* “Websites made simple for local businesses.”
+* “We handle your website.”
+
+### Action-oriented
+
+* “Tell us your business. Go online.”
+* “Speak. We build.”
+* “From voice to website.”
+
+### Bharat-first
+
+* “Built for local businesses.”
+* “Online banaye, aasaan tarike se.”
+
+---
+
+## 6️⃣ Homepage Messaging (Above the Fold)
+
+### Hero Headline
+
+**“Build your business website using voice or text.”**
+
+### Subheading
+
+“No coding. No design. No hosting headaches.
+Just tell us about your business — we’ll do the rest.”
+
+### Primary CTA
+
+🟢 **Create my website**
+
+### Secondary CTA
+
+🔵 **See how it works**
+
+---
+
+## 7️⃣ Trust Signals (Very Important)
+
+Non-technical users need reassurance.
+
+Use:
+
+* “Built for small businesses”
+* “Mobile-friendly websites”
+* “Works in Hindi & English”
+* “No technical knowledge required”
+
+Later add:
+
+* Testimonials
+* Before / After screenshots
+* City names (Dibrugarh, Patna, Indore)
+
+---
+
+## 8️⃣ Feature Messaging (User Language)
+
+❌ Feature: AI-powered static site generator
+✅ Feature: “Your website loads fast and looks professional.”
+
+❌ Feature: Speech recognition
+✅ Feature: “Speak in your language. We understand.”
+
+❌ Feature: Cloud hosting
+✅ Feature: “Your website stays online, always.”
+
+---
+
+## 9️⃣ Onboarding Copy (Very Important)
+
+### First Screen
+
+**“Let’s build your website.”**
+“It takes less than 2 minutes.”
+
+### Input Prompt
+
+“Tell us about your business.”
+Example shown:
+
+> “I run a medical store in Dibrugarh.”
+
+### After Generation
+
+🎉 **“Your website is ready!”**
+“You can edit it anytime.”
+
+---
+
+## 🔟 Pricing Page Language
+
+Avoid aggressive SaaS tone.
+
+### Free Plan
+
+“Start for free. Upgrade only if you need more.”
+
+### Paid Plan
+
+“For growing businesses that want full control.”
+
+No:
+
+* “Enterprise”
+* “Pro”
+* “Advanced AI”
+
+---
+
+## 1️⃣1️⃣ Error & Empty States (Brand Moment)
+
+Instead of:
+
+> “Something went wrong”
+
+Use:
+
+> “We’re fixing this. Please try again in a moment.”
+
+Instead of:
+
+> “No data found”
+
+Use:
+
+> “Your website will appear here once it’s ready.”
+
+---
+
+## 1️⃣2️⃣ Visual Branding Direction
+
+### Colors
+
+* Primary: Calm blue / green (trust)
+* Accent: Soft orange (action)
+* Background: White / off-white
+
+### Fonts
+
+* Clean sans-serif
+* High readability
+* Large line spacing
+
+### UI Feel
+
+* Big buttons
+* Fewer choices
+* One main action per screen
+
+---
+
+## 1️⃣3️⃣ Brand Promise (Internal Rule)
+
+Every screen must answer:
+
+> “Is this making life simpler for a non-technical user?”
+
+If not → remove it.
+
+---
+
+## 1️⃣4️⃣ Brand One-Liner (Internal)
+
+> **We don’t sell websites.
+> We take responsibility for your website.**
+
+This line should guide **every product and branding decision**.
