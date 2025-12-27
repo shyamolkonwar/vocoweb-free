@@ -1,0 +1,35 @@
+# ============================================
+# Laxizen Celery Worker Dockerfile
+# Handles AI workloads asynchronously
+# Same codebase as API, different command
+# ============================================
+
+FROM python:3.12-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies (wrangler for Cloudflare deployment)
+RUN apt-get update && apt-get install -y \
+    curl \
+    nodejs \
+    npm \
+    && npm install -g wrangler \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Create data directory
+RUN mkdir -p app/data
+
+# No exposed ports - worker doesn't serve HTTP
+
+# Run Celery worker with Upstash-optimized settings
+CMD ["celery", "-A", "app.core.celery_app", "worker", "--loglevel=info", "--without-gossip", "--without-mingle", "--without-heartbeat", "--concurrency=2"]

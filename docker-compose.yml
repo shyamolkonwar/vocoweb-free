@@ -1,32 +1,80 @@
 version: '3.8'
 
+# ============================================
+# Laxizen Backend Docker Compose
+# Starts: API + Celery Worker + Cloudflare Tunnel
+# Frontend on Vercel connects via api-dev.laxizen.fun
+# ============================================
+
 services:
-  # Redis - Message broker for Celery
-  redis:
-    image: redis:7-alpine
-    container_name: setu-redis
+  # =====================================
+  # Backend API (FastAPI)
+  # =====================================
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.api
+    container_name: laxizen-api
     ports:
-      - "6379:6379"
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
     volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes
+      - website_data:/app/app/data
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # =====================================
+  # Celery Worker (AI Jobs)
+  # Upstash-optimized settings
+  # =====================================
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    container_name: laxizen-worker
+    env_file:
+      - ./backend/.env
+    volumes:
+      - website_data:/app/app/data
+    depends_on:
+      - api
     restart: unless-stopped
 
-  # Optional: Redis Commander (UI for debugging)
-  # redis-commander:
-  #   image: rediscommander/redis-commander:latest
-  #   container_name: setu-redis-commander
-  #   environment:
-  #     - REDIS_HOSTS=local:redis:6379
-  #   ports:
-  #     - "8081:8081"
-  #   depends_on:
-  #     - redis
+  # =====================================
+  # Cloudflare Tunnel
+  # Exposes local API to api-dev.laxizen.fun
+  # =====================================
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: laxizen-tunnel
+    command: tunnel --config /etc/cloudflared/config.yml run
+    volumes:
+      - /Users/shyamolkonwar/.cloudflared:/etc/cloudflared:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - api
+    restart: unless-stopped
 
 volumes:
-  redis_data:
+  website_data:
+
+# ============================================
+# Usage:
+#   docker-compose up -d
+#
+# Services started (in order):
+#   1. api - FastAPI on port 8000
+#   2. worker - Celery for AI tasks
+#   3. tunnel - Cloudflare tunnel to api-dev.laxizen.fun
+#
+# Prerequisites:
+#   - backend/.env configured (REDIS_URL, SUPABASE, CLOUDFLARE, OPENAI)
+#   - ~/.cloudflared has your tunnel credentials
+#   - Run 'cloudflared tunnel login' first if not set up
+# ============================================
