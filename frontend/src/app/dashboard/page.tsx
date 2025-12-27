@@ -1,218 +1,56 @@
-'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense } from 'react';
 import Link from 'next/link';
-import Header from '@/components/Header';
-import { useAuth } from '@/context/AuthContext';
+import { redirect } from 'next/navigation';
+import { createClient } from '@/utils/supabase/server';
 
-interface Website {
-    id: string;
-    status: string;
-    subdomain?: string;
-    live_url?: string;
-    business_json?: {
-        business_name?: string;
-        business_type?: string;
-    };
-    created_at: string;
-    updated_at?: string;
-    source_type: string;
-}
+import DashboardClientWrapper from './components/DashboardClientWrapper';
+import DashboardHeader from './components/DashboardHeader';
+import { CreditCard, WebsitesCountCard } from './components/StatsCards';
+import { WebsiteList } from './components/WebsiteList';
+import { CardSkeleton, WebsiteListSkeleton } from './components/Skeletons';
 
-interface Credits {
-    balance: number;
-    lifetime_earned: number;
-    lifetime_spent: number;
-}
+export const metadata = {
+    title: 'Dashboard | Laxizen',
+};
 
-export default function DashboardPage() {
-    const [language, setLanguage] = useState<'en' | 'hi'>('en');
-    const [websites, setWebsites] = useState<Website[]>([]);
-    const [credits, setCredits] = useState<Credits>({ balance: 0, lifetime_earned: 0, lifetime_spent: 0 });
-    const [isLoadingData, setIsLoadingData] = useState(true);
-    const router = useRouter();
-    const { user, isLoading, isAuthenticated, logout } = useAuth();
+export default async function DashboardPage() {
+    // Server-side auth check
+    const supabase = await createClient();
+    const { data: { session } } = await supabase.auth.getSession();
 
-    const content = {
-        en: {
-            title: 'Dashboard',
-            welcome: 'Welcome back',
-            myWebsites: 'My Websites',
-            noWebsites: 'No websites yet',
-            createFirst: 'Create your first website',
-            createNew: 'Create New Website',
-            edit: 'Edit',
-            preview: 'Preview',
-            credits: 'Credits',
-            creditsRemaining: 'Credits remaining',
-            creditsInfo: 'Used for creating & editing websites',
-            buyCredits: 'Buy More Credits',
-            draft: 'Draft',
-            live: 'Published',
-            logout: 'Logout'
-        },
-        hi: {
-            title: 'Dashboard',
-            welcome: 'वापस आइए',
-            myWebsites: 'मेरी Websites',
-            noWebsites: 'अभी कोई website नहीं',
-            createFirst: 'अपनी पहली website बनाएं',
-            createNew: 'नई Website बनाएं',
-            edit: 'Edit करें',
-            preview: 'Preview',
-            credits: 'Credits',
-            creditsRemaining: 'Credits बचे हैं',
-            creditsInfo: 'Website बनाने और edit करने में use होते हैं',
-            buyCredits: 'और Credits खरीदें',
-            draft: 'Draft',
-            live: 'Published',
-            logout: 'Logout करें'
-        }
-    };
-
-    const t = content[language];
-
-    // Redirect if not logged in
-    useEffect(() => {
-        if (!isLoading && !isAuthenticated) {
-            router.push('/login');
-        }
-    }, [isAuthenticated, isLoading, router]);
-
-    // Fetch user's websites and credits
-    useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                const response = await fetch('/api/dashboard');
-                const data = await response.json();
-
-                if (response.ok) {
-                    setWebsites(data.websites || []);
-                    setCredits(data.credits || { balance: 0, lifetime_earned: 0, lifetime_spent: 0 });
-                }
-            } catch (error) {
-                console.error('Failed to fetch dashboard data:', error);
-            } finally {
-                setIsLoadingData(false);
-            }
-        };
-
-        if (isAuthenticated) {
-            fetchDashboardData();
-        }
-    }, [isAuthenticated]);
-
-    // Get user display name from Supabase user metadata
-    const getUserName = () => {
-        if (!user) return '';
-        const metadata = user.user_metadata;
-        return metadata?.full_name || metadata?.name || user.email?.split('@')[0] || '';
-    };
-
-    if (isLoading) {
-        return (
-            <div className="app">
-                <Header language={language} setLanguage={setLanguage} />
-                <main className="dashboard-page">
-                    <div className="dashboard-loading">
-                        <div className="spinner large"></div>
-                    </div>
-                </main>
-            </div>
-        );
-    }
-
-    if (!isAuthenticated) {
-        return null;
+    if (!session) {
+        redirect('/login');
     }
 
     return (
-        <div className="app">
-            <Header language={language} setLanguage={setLanguage} />
-            <main className="dashboard-page">
-                <div className="dashboard-container">
-                    {/* Welcome Header */}
-                    <div className="dashboard-header">
-                        <div className="dashboard-welcome">
-                            <h1>{t.welcome}, {getUserName()}! 👋</h1>
-                        </div>
-                        <button onClick={logout} className="btn-text logout-btn">
-                            {t.logout}
-                        </button>
-                    </div>
+        <DashboardClientWrapper>
+            <div className="dashboard-container">
+                <DashboardHeader />
 
-                    {/* Stats Cards */}
-                    <div className="dashboard-cards">
-                        {/* Websites Card */}
-                        <div className="dashboard-card">
-                            <div className="card-icon">🌐</div>
-                            <div className="card-content">
-                                <h3>{t.myWebsites}</h3>
-                                <p className="card-stat">{websites.length}</p>
-                            </div>
-                        </div>
+                {/* Stats Cards - Parallel Fetching */}
+                <div className="dashboard-cards">
+                    <Suspense fallback={<CardSkeleton />}>
+                        <WebsitesCountCard />
+                    </Suspense>
 
-                        {/* Credits Card */}
-                        <div className="dashboard-card">
-                            <div className="card-icon">🎯</div>
-                            <div className="card-content">
-                                <h3>{t.credits}</h3>
-                                <p className="card-stat">{credits.balance}</p>
-                                <p className="card-subtitle">{t.creditsInfo}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Main Action */}
-                    <div className="dashboard-cta">
-                        <Link href="/create" className="btn-primary btn-large">
-                            {t.createNew}
-                        </Link>
-                    </div>
-
-                    {/* Websites List */}
-                    <section className="dashboard-section">
-                        <h2>{t.myWebsites}</h2>
-
-                        {isLoadingData ? (
-                            <div className="websites-loading">
-                                <div className="spinner"></div>
-                            </div>
-                        ) : websites.length === 0 ? (
-                            <div className="websites-empty">
-                                <div className="empty-icon">🏗️</div>
-                                <p>{t.noWebsites}</p>
-                                <Link href="/create" className="btn-secondary">
-                                    {t.createFirst}
-                                </Link>
-                            </div>
-                        ) : (
-                            <div className="websites-grid">
-                                {websites.map((website) => (
-                                    <div key={website.id} className="website-card">
-                                        <div className="website-card-header">
-                                            <h3>{website.business_json?.business_name || 'Untitled Website'}</h3>
-                                            <span className={`website-badge ${website.status === 'live' ? 'live' : 'draft'}`}>
-                                                {website.status === 'live' ? t.live : t.draft}
-                                            </span>
-                                        </div>
-                                        <p className="website-type">{website.business_json?.business_type || 'Business'}</p>
-                                        <div className="website-card-actions">
-                                            <Link href={`/editor/${website.id}`} className="btn-secondary btn-small">
-                                                {t.edit}
-                                            </Link>
-                                            <Link href={`/preview/${website.id}`} className="btn-text btn-small">
-                                                {t.preview}
-                                            </Link>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </section>
+                    <Suspense fallback={<CardSkeleton />}>
+                        <CreditCard />
+                    </Suspense>
                 </div>
-            </main>
-        </div>
+
+                {/* Main Action */}
+                <div className="dashboard-cta">
+                    <Link href="/create" className="btn-primary btn-large">
+                        Create New Website
+                    </Link>
+                </div>
+
+                {/* Websites List - Parallel Fetching */}
+                <Suspense fallback={<WebsiteListSkeleton />}>
+                    <WebsiteList />
+                </Suspense>
+            </div>
+        </DashboardClientWrapper>
     );
 }

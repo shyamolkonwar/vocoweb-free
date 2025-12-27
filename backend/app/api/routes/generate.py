@@ -104,8 +104,8 @@ async def generate_website(
         # Step 2: Select layout
         layout = select_layout(business.business_type, business.tone)
         
-        # Step 3: Build website
-        html = build_website(business, layout, request.language)
+        # Step 3: Build website (async with Pexels images)
+        html = await build_website(business, layout, request.language)
         
         # Step 4: Store website
         website_id = f"site_{int(datetime.now().timestamp())}_{os.urandom(4).hex()}"

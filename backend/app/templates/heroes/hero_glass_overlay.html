@@ -1,0 +1,60 @@
+<!-- Hero: Glass Overlay - Immersive full-screen with glassmorphism -->
+<section class="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <!-- Background Image -->
+    <div class="absolute inset-0">
+        <img src="{{ hero_image }}" alt="{{ business_name }}" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-br from-gray-900/90 via-gray-900/70 to-transparent"></div>
+    </div>
+
+    <!-- Decorative Elements -->
+    <div class="absolute top-20 right-20 w-72 h-72 rounded-full opacity-20 blur-3xl"
+        style="background: {{ primary_color }};"></div>
+    <div class="absolute bottom-20 left-20 w-96 h-96 rounded-full opacity-15 blur-3xl"
+        style="background: {{ accent_color }};"></div>
+
+    <!-- Content -->
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-20">
+        <div data-aos="fade-up">
+            <!-- Badge -->
+            <div class="inline-flex items-center gap-2 glass px-4 py-2 rounded-full mb-8">
+                <span class="w-2 h-2 rounded-full animate-pulse" style="background: {{ accent_color }};"></span>
+                <span class="text-white/90 text-sm font-medium">{{ business_type }} in {{ location }}</span>
+            </div>
+
+            <!-- Headline -->
+            <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
+                {{ tagline }}
+            </h1>
+
+            <!-- Description -->
+            <p class="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto mb-10 leading-relaxed">
+                {{ description }}
+            </p>
+
+            <!-- CTA Buttons -->
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <a href="#contact"
+                    class="group px-8 py-4 rounded-full text-white font-semibold text-lg transition-all duration-300 transform hover:scale-105 shadow-2xl flex items-center gap-2"
+                    style="background: {{ accent_color }}; box-shadow: 0 8px 30px {{ accent_color }}50;">
+                    {{ cta }}
+                    <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                </a>
+                <a href="#services"
+                    class="px-8 py-4 rounded-full glass text-white font-semibold text-lg transition-all duration-300 hover:bg-white/20">
+                    {{ labels.learn_more }}
+                </a>
+            </div>
+        </div>
+
+        <!-- Scroll Indicator -->
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2" data-aos="fade-up" data-aos-delay="400">
+            <div class="w-6 h-10 rounded-full border-2 border-white/30 flex items-start justify-center p-2">
+                <div class="w-1.5 h-3 rounded-full bg-white animate-bounce"></div>
+            </div>
+        </div>
+    </div>
+</section>

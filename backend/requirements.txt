@@ -10,6 +10,9 @@ openai>=1.58.1
 # Async HTTP
 httpx>=0.28.1
 
+# Templating
+Jinja2>=3.1.0
+
 # Environment
 python-dotenv>=1.0.1
 

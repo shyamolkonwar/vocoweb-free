@@ -1,0 +1,72 @@
+<!-- Services: Glass Cards - Glassmorphism service cards with hover effects -->
+<section id="services" class="relative py-24 overflow-hidden bg-gray-50">
+    <!-- Background Decoration -->
+    <div class="absolute top-0 right-0 w-96 h-96 rounded-full opacity-30 blur-3xl -translate-y-1/2"
+        style="background: {{ primary_color }};"></div>
+    <div class="absolute bottom-0 left-0 w-80 h-80 rounded-full opacity-20 blur-3xl translate-y-1/2"
+        style="background: {{ accent_color }};"></div>
+
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Section Header -->
+        <div class="text-center mb-16" data-aos="fade-up">
+            <span class="inline-block px-4 py-2 rounded-full text-sm font-semibold mb-4"
+                style="background: {{ primary_color }}15; color: {{ primary_color }};">
+                {{ labels.what_we_offer }}
+            </span>
+            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+                {{ labels.services }}
+            </h2>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                {{ labels.services_subtitle }}
+            </p>
+        </div>
+
+        <!-- Services Grid -->
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {% for service in services %}
+            <div class="group relative" data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
+                <div class="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"
+                    style="background: {{ primary_color }}30;"></div>
+                <div
+                    class="relative bg-white rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-gray-100">
+                    <!-- Icon -->
+                    <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300"
+                        style="background: linear-gradient(135deg, {{ primary_color }}, {{ primary_color }}cc);">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+
+                    <!-- Content -->
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">{{ service }}</h3>
+                    <p class="text-gray-600 mb-6">{{ labels.service_description }}</p>
+
+                    <!-- Learn More Link -->
+                    <a href="#contact"
+                        class="inline-flex items-center gap-2 font-semibold transition-colors group-hover:gap-3"
+                        style="color: {{ primary_color }};">
+                        {{ labels.learn_more }}
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Bottom CTA -->
+        <div class="text-center mt-16" data-aos="fade-up">
+            <a href="#contact"
+                class="inline-flex items-center gap-2 px-8 py-4 rounded-full text-white font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"
+                style="background: {{ accent_color }}; box-shadow: 0 4px 20px {{ accent_color }}50;">
+                {{ labels.get_started }}
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+            </a>
+        </div>
+    </div>
+</section>

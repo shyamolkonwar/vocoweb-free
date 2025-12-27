@@ -1,0 +1,103 @@
+<!-- Hero: Minimal Split - Clean corporate layout with text left, image right -->
+<section class="relative min-h-screen flex items-center overflow-hidden bg-white pt-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+
+            <!-- Text Content -->
+            <div data-aos="fade-right">
+                <!-- Badge -->
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
+                    style="background: {{ primary_color }}15;">
+                    <span class="w-2 h-2 rounded-full" style="background: {{ primary_color }};"></span>
+                    <span class="text-sm font-medium" style="color: {{ primary_color }};">{{ business_type }}</span>
+                </div>
+
+                <!-- Headline -->
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+                    {{ tagline }}
+                </h1>
+
+                <!-- Description -->
+                <p class="text-lg text-gray-600 mb-8 leading-relaxed max-w-lg">
+                    {{ description }}
+                </p>
+
+                <!-- Location -->
+                <div class="flex items-center gap-2 text-gray-500 mb-8">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>{{ location }}</span>
+                </div>
+
+                <!-- CTA Buttons -->
+                <div class="flex flex-wrap gap-4">
+                    <a href="#contact"
+                        class="group px-8 py-4 rounded-xl text-white font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center gap-2"
+                        style="background: {{ primary_color }}; box-shadow: 0 4px 20px {{ primary_color }}40;">
+                        {{ cta }}
+                        <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                        </svg>
+                    </a>
+                    <a href="#services"
+                        class="px-8 py-4 rounded-xl border-2 font-semibold transition-all duration-300 hover:shadow-lg"
+                        style="border-color: {{ primary_color }}; color: {{ primary_color }};">
+                        {{ labels.our_services }}
+                    </a>
+                </div>
+
+                <!-- Trust Indicators -->
+                <div class="mt-12 pt-8 border-t border-gray-200">
+                    <div class="grid grid-cols-3 gap-6">
+                        <div>
+                            <div class="text-2xl font-bold" style="color: {{ primary_color }};">500+</div>
+                            <div class="text-sm text-gray-500">{{ labels.happy_customers }}</div>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-bold" style="color: {{ primary_color }};">10+</div>
+                            <div class="text-sm text-gray-500">{{ labels.years_experience }}</div>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-bold" style="color: {{ primary_color }};">4.9★</div>
+                            <div class="text-sm text-gray-500">{{ labels.rating }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Image -->
+            <div class="relative" data-aos="fade-left">
+                <div class="absolute -top-10 -right-10 w-72 h-72 rounded-full opacity-30 blur-3xl"
+                    style="background: {{ accent_color }};"></div>
+                <div class="absolute -bottom-10 -left-10 w-56 h-56 rounded-full opacity-20 blur-3xl"
+                    style="background: {{ primary_color }};"></div>
+                <div class="relative rounded-3xl overflow-hidden shadow-2xl">
+                    <img src="{{ hero_image }}" alt="{{ business_name }}"
+                        class="w-full h-[500px] lg:h-[600px] object-cover">
+                    <!-- Floating Card -->
+                    <div class="absolute bottom-6 left-6 right-6 glass-dark rounded-2xl p-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-full flex items-center justify-center"
+                                style="background: {{ accent_color }};">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <div class="text-white">
+                                <div class="font-semibold">{{ labels.trusted }}</div>
+                                <div class="text-sm text-white/70">{{ labels.quality_service }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,100 @@
+📘 Laxizen System Documentation v2.0
+Project: AI Website Builder for Local Businesses (Multi-Page & Lead Capture) Core Philosophy: "Agency Quality Design + Business Utility (Leads)"
+
+1. Executive Summary
+Laxizen is evolving from a single-page generator to a full business solution. The system now generates multi-page websites (Home, Services, About, Contact) with embedded Lead Capture forms.
+Design: Assembled from pre-built Tailwind "Legos" (Modern, Glassmorphism).
+Visuals: Powered by Pexels (Realism) and Nano Banana Pro (Branding).
+Functionality: Forms on user websites submit data to the central Laxizen backend, allowing business owners to view leads in their dashboard.
+2. Functional Architecture
+A. The "Multi-Page" Engine
+Instead of generating one index.html, the builder.py module now generates a directory of linked pages.
+Navigation System:
+The AI generates a global Navbar and Footer that are injected into every page.
+Links are relative: <a href="services.html">Services</a>, <a href="contact.html">Contact</a>.
+Page Generation Logic:
+index.html (Home): Hero (High impact), Testimonials, CTA.
+services.html (Services): Detailed list of offerings (e.g., "Root Canal", "Whitening") with pricing cards.
+about.html (Trust): Doctor/Baker bio, history, certifications.
+contact.html (Conversion): Map, Address, and the Primary Lead Form.
+B. The "Universal Lead Capture" System
+Local business websites must capture customers. Since we host on static Cloudflare Pages, we cannot run backend code on the user's site.
+
+The Solution: Centralized Form Handler
+The Component: Every generated website includes a standard HTML form component (Popup or Inline).
+The Target: The form does not submit to itself. It submits to YOUR API.
+Data Flow:
+Visitor lands on dentist-demo.laxizen.fun.
+Visitor fills out the "Book Appointment" popup.
+Browser sends POST https://api.laxizen.fun/api/leads/submit with:
+website_id: "dentist-demo"
+name: "Rahul"
+phone: "+91 98765..."
+Laxizen Backend receives data, validates it, and stores it in Supabase under the leads table.
+Business Owner logs into Laxizen Dashboard and sees "New Lead: Rahul".
+3. The "Modern Design" Component Library
+To ensure websites don't look like generic "AI sludge," we use a strict library of Tailwind components.
+
+🎨 The "Lego" Set (New Additions)
+1. Lead Capture Components (New)
+modal_popup.html: A glass-morphism popup that triggers after 5 seconds or on exit intent.
+Features: "Get 10% Off" (Bakery) or "Free Consultation" (Clinic).
+inline_booking_form.html: A modern, clean form embedded in the Hero or Contact section.
+Styling: Floating labels, gradient submit buttons, micro-interactions on focus.
+2. Service Cards (Updated)
+card_pricing_glass.html: Frosted glass effect for menu items or service lists.
+card_hover_tilt.html: 3D tilt effect on hover for high-end feel.
+3. Navigation (Updated)
+nav_sticky_transparent.html: Starts transparent, turns solid white/black when scrolling down.
+mobile_hamburger_menu.html: Full-screen slide-out menu for mobile users (critical for India).
+4. The Generation Pipeline (Updated Flow)
+Step 1: Deep Understanding (GPT-4o)
+Input: "I have a bakery in Delhi called Sweet tooth."
+Extraction:
+Services: Cakes, Pastries, Custom Orders.
+Lead Magnet: "Get a free cupcake with first order." (AI suggests this).
+Color Palette: Warm Oranges & Browns (Hex codes).
+Step 2: Asset Acquisition (Hybrid)
+Pexels API: Fetches "Delicious Chocolate Cake" for services.html and "Baker kneading dough" for about.html.
+Nano Banana Pro: Generates a Logo (Vector style, minimal muffin icon).
+Step 3: Multi-Page Assembly (Jinja2) The system loops through the page list:
+Render index.html: Injects Hero, Featured Products, Popup Form.
+Render contact.html: Injects Google Maps iframe link, Address, Contact Form.
+Linkage: Ensures Navbar links match the generated filenames.
+Step 4: Deployment
+Wrangler: Uploads the entire folder (html files + assets) to Cloudflare.
+Result: A fully navigable, multi-page site.
+5. Dashboard Updates (The Control Room)
+The user dashboard must now show value beyond just "Edit Website."
+
+New Tab: "Leads & Customers"
+Lead Table: Shows Name, Phone, Service Interested In, Time.
+Action Buttons: "Call Now" (Click to dial), "Mark as Done".
+Stats: "15 Leads this week", "Top performing page".
+New Tab: "Pop-up Manager"
+Toggle: Turn Popup ON/OFF.
+Edit Text: Change "Get 10% Off" to "Buy 1 Get 1 Free".
+Note: This updates the HTML and re-deploys via Wrangler.
+6. Technical Specifications for Developers
+API Endpoints Needed (Backend)
+POST /api/leads/submit
+Public Endpoint (Rate Limited).
+Accepts form data from generated sites.
+Validation: Must check if website_id exists.
+GET /api/dashboard/leads
+Protected Endpoint.
+Fetches leads for the logged-in owner.
+Database Schema Updates (Supabase)
+Table: leads
+id (UUID)
+website_id (FK to websites)
+customer_name (Text)
+customer_phone (Text)
+customer_email (Text, optional)
+message (Text)
+created_at (Timestamp)
+status (New, Contacted, Converted)
+7. Why This Wins?
+Real Value: A pretty website is nice. A website that collects phone numbers makes money.
+Modern UI: Glassmorphism and animations make small businesses look like big brands.
+Zero Maintenance: The user doesn't need to install plugins or manage databases. We handle the form backend centrally.

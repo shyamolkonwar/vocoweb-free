@@ -20,7 +20,7 @@ from app.ai import (
     create_business_profile_from_extraction,
     BusinessProfile
 )
-from app.website import build_website
+from app.website import build_website_sync as build_website
 from app.services.scraper import scrape_website, ScrapeError
 
 

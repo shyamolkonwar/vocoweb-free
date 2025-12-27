@@ -67,6 +67,9 @@ class Settings(BaseSettings):
     # Base domain for published sites
     base_domain: str = "setu.local"
     
+    # Pexels API (Free stock photos)
+    pexels_api_key: str = ""
+    
     class Config:
         env_file = Path(__file__).parent.parent.parent / ".env"
         env_file_encoding = "utf-8"
