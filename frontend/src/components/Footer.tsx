@@ -7,7 +7,7 @@ interface FooterProps {
 const content = {
     en: {
         tagline: "We don't sell websites. We take responsibility for your website.",
-        copyright: "© 2024 Setu. Built with ❤️ for local businesses.",
+        copyright: "© 2024 Laxizen. Built with ❤️ for local businesses.",
         links: {
             about: "About",
             contact: "Contact",
@@ -16,7 +16,7 @@ const content = {
     },
     hi: {
         tagline: "हम websites नहीं बेचते। हम आपकी website की ज़िम्मेदारी लेते हैं।",
-        copyright: "© 2024 Setu. Local businesses के लिए ❤️ से बनाया।",
+        copyright: "© 2024 Laxizen. Local businesses के लिए ❤️ से बनाया।",
         links: {
             about: "हमारे बारे में",
             contact: "संपर्क",
@@ -34,7 +34,7 @@ export default function Footer({ language }: FooterProps) {
                 <div className="footer-brand">
                     <div className="footer-logo">
                         <span className="logo-icon">◈</span>
-                        <span className="logo-text">Setu</span>
+                        <span className="logo-text">Laxizen</span>
                     </div>
                     <p className="footer-tagline">{t.tagline}</p>
                 </div>

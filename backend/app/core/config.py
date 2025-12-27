@@ -12,6 +12,11 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
+    # Application Mode: 'development' or 'production'
+    # development = local storage, no Cloudflare publishing
+    # production = Supabase storage, Cloudflare publishing, credit tracking
+    app_mode: str = "development"
+    
     # OpenAI
     openai_api_key: str = ""
     
@@ -24,6 +29,11 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
     debug: bool = True
+    
+    @property
+    def is_production(self) -> bool:
+        """Check if running in production mode."""
+        return self.app_mode.lower() == "production"
     
     # CORS origins
     cors_origins: list[str] = [

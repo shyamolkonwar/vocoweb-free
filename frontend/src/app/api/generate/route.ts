@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/utils/supabase/server';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
@@ -14,10 +15,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Call backend API to generate website
+    // Get auth token from Supabase session
+    const supabase = await createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      return NextResponse.json(
+        { error: 'Please log in to generate a website', requiresAuth: true },
+        { status: 401 }
+      );
+    }
+
+    // Call backend API with auth token
     const response = await fetch(`${BACKEND_URL}/api/generate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
       body: JSON.stringify({ description, language })
     });
 
@@ -25,6 +40,16 @@ export async function POST(request: NextRequest) {
 
     if (response.ok) {
       return NextResponse.json(data, { status: 201 });
+    } else if (response.status === 401) {
+      return NextResponse.json(
+        { error: 'Please log in to generate a website', requiresAuth: true },
+        { status: 401 }
+      );
+    } else if (response.status === 402) {
+      return NextResponse.json(
+        { error: 'Insufficient credits. Please purchase more credits.', insufficientCredits: true },
+        { status: 402 }
+      );
     } else {
       return NextResponse.json(
         { error: data.detail || 'Failed to generate website' },

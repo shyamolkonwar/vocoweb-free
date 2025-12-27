@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import VoiceInput from '@/components/VoiceInput';
+import AuthModal from '@/components/auth/AuthModal';
+import { useAuth } from '@/context/AuthContext';
 
 const examples = {
     en: [
@@ -34,7 +36,9 @@ const content = {
         textMode: "Type",
         voiceMode: "Voice",
         voiceSubtitle: "Speak in English or Hindi",
-        orDivider: "or"
+        orDivider: "or",
+        loginRequired: "Please log in to generate your website",
+        insufficientCredits: "You need more credits to generate a website"
     },
     hi: {
         title: "अपने business के बारे में बताएं",
@@ -48,7 +52,9 @@ const content = {
         textMode: "Type करें",
         voiceMode: "बोलें",
         voiceSubtitle: "Hindi या English में बोलें",
-        orDivider: "या"
+        orDivider: "या",
+        loginRequired: "Website बनाने के लिए login करें",
+        insufficientCredits: "आपको और credits चाहिए"
     }
 };
 
@@ -60,12 +66,20 @@ export default function CreatePage() {
     const [businessDesc, setBusinessDesc] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState('');
+    const [showAuthModal, setShowAuthModal] = useState(false);
     const router = useRouter();
+    const { isAuthenticated } = useAuth();
     const t = content[language];
 
     const handleGenerate = async () => {
         if (businessDesc.trim().length < 20) {
             setError(t.minChars);
+            return;
+        }
+
+        // Check if user is logged in first
+        if (!isAuthenticated) {
+            setShowAuthModal(true);
             return;
         }
 
@@ -86,6 +100,12 @@ export default function CreatePage() {
 
             if (response.ok && data.id) {
                 router.push(`/preview/${data.id}`);
+            } else if (data.requiresAuth) {
+                setShowAuthModal(true);
+                setIsGenerating(false);
+            } else if (data.insufficientCredits) {
+                setError(t.insufficientCredits);
+                setIsGenerating(false);
             } else {
                 setError(data.error || 'Something went wrong');
                 setIsGenerating(false);
@@ -218,6 +238,15 @@ export default function CreatePage() {
             </main>
 
             <Footer language={language} />
+
+            {showAuthModal && (
+                <AuthModal
+                    language={language}
+                    onClose={() => setShowAuthModal(false)}
+                    title={language === 'en' ? 'Log in to continue' : 'आगे बढ़ने के लिए login करें'}
+                    subtitle={language === 'en' ? 'Sign in to generate and publish your website' : 'Website बनाने और publish करने के लिए sign in करें'}
+                />
+            )}
         </div>
     );
 }

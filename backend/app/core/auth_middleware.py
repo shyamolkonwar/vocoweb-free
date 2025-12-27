@@ -26,6 +26,11 @@ class AuthUser(BaseModel):
     id: str
     email: str
     role: str = "authenticated"
+    
+    @property
+    def user_id(self) -> str:
+        """Alias for id for compatibility."""
+        return self.id
 
 
 @lru_cache(maxsize=1)

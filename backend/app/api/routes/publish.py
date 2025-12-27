@@ -28,6 +28,7 @@ from app.services.deploy import (
     publish_website
 )
 from app.core.auth_middleware import require_auth, AuthUser
+from app.core.config import get_settings
 
 router = APIRouter()
 
@@ -95,16 +96,22 @@ async def publish_site(website_id: str, user: AuthUser = Depends(require_auth)):
     if not html_content:
         raise HTTPException(status_code=400, detail="Website has no content to publish")
     
-    # Check if user has enough credits (skip for legacy sites if Supabase not ready)
-    try:
-        has_credits = await supabase_service.check_credits(user.id, "publish")
-        if not has_credits:
-            raise HTTPException(
-                status_code=402, 
-                detail=f"Insufficient credits. Publishing requires {CREDIT_COSTS['publish']} credits."
-            )
-    except Exception:
-        pass  # Allow publishing if credits check fails (Supabase not configured)
+    settings = get_settings()
+    
+    # Check if user has enough credits in production mode
+    if settings.is_production:
+        try:
+            has_credits = await supabase_service.check_credits(user.id, "publish")
+            if not has_credits:
+                raise HTTPException(
+                    status_code=402, 
+                    detail=f"Insufficient credits. Publishing requires {CREDIT_COSTS['publish']} credits."
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"Credits check failed: {e}")
+            # Continue anyway - fail open
     
     try:
         # Deploy to Cloudflare Pages (or local fallback)
@@ -115,16 +122,10 @@ async def publish_site(website_id: str, user: AuthUser = Depends(require_auth)):
             user_id=user.id
         )
         
-        # Update Supabase only if valid UUID
-        if is_uuid:
+        # In production mode, save deployment and deduct credits
+        if settings.is_production:
             try:
-                await supabase_service.publish_website(
-                    website_id=website_id,
-                    owner_id=user.id,
-                    subdomain=published.subdomain,
-                    live_url=published.url
-                )
-                
+                # Create deployment record
                 await supabase_service.create_deployment(
                     website_id=website_id,
                     deployment_id=published.deployment_id,
@@ -132,10 +133,30 @@ async def publish_site(website_id: str, user: AuthUser = Depends(require_auth)):
                     live_url=published.url,
                     deployed_by=user.id
                 )
+                print(f"Deployment saved: {published.subdomain}")
                 
-                await supabase_service.deduct_credits(user.id, "publish", f"Published website {website_id}")
-            except Exception:
-                pass  # Supabase operations are optional for legacy sites
+                # Deduct credits
+                await supabase_service.deduct_credits(
+                    user.id, 
+                    "publish", 
+                    f"Published website {published.subdomain}"
+                )
+                print(f"Credits deducted for publish")
+                
+                # Update website status if it's a UUID
+                if is_uuid:
+                    await supabase_service.publish_website(
+                        website_id=website_id,
+                        owner_id=user.id,
+                        subdomain=published.subdomain,
+                        live_url=published.url
+                    )
+                
+                # Track usage
+                await supabase_service.increment_usage_limit(user.id, "publish")
+            except Exception as e:
+                print(f"Supabase operations failed: {e}")
+                # Don't fail the publish - the site is already live
         
         return PublishResponse(
             id=website_id,

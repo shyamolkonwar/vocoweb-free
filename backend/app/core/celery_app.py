@@ -51,7 +51,7 @@ if USE_SSL:
         },
     )
 
-# Celery configuration optimized for Upstash
+# Celery configuration optimized for Upstash Serverless
 celery_app.conf.update(
     # Serialization (required for Upstash compatibility)
     task_serializer="json",
@@ -84,6 +84,27 @@ celery_app.conf.update(
     # Timezone
     timezone="Asia/Kolkata",
     enable_utc=True,
+    
+    # ============================================
+    # UPSTASH SERVERLESS OPTIMIZATION
+    # Reduce Redis polling to save on command count
+    # ============================================
+    
+    # Increase polling interval from default ~0.1s to 5 seconds
+    # This drastically reduces "BRPOP" commands when idle
+    broker_transport_options={
+        'visibility_timeout': 3600,  # 1 hour (task lock timeout)
+        'polling_interval': 5,       # Check for tasks every 5 seconds (was ~0.1s)
+    },
+    
+    # Disable worker gossip (workers chatting to sync state)
+    # Not needed for simple MVP - saves Redis pub/sub commands
+    worker_hijack_root_logger=False,
+    worker_log_format="[%(asctime)s: %(levelname)s/%(processName)s] %(message)s",
+    
+    # Disable events to reduce Redis writes
+    worker_send_task_events=False,
+    task_send_sent_event=False,
 )
 
 # Optional: Configure task routes for different queues (future scaling)

@@ -1,10 +1,12 @@
 """
 Upstash Redis Rate Limiting Utility
 Serverless rate limiting for API protection and abuse control.
+Supports dynamic rate limits from Supabase in production mode.
 """
 
 import time
-from typing import Tuple, Optional
+import asyncio
+from typing import Tuple, Optional, Dict
 from upstash_redis import Redis
 
 from app.core.config import get_settings
@@ -18,17 +20,18 @@ class UpstashRateLimiter:
     - Distributed rate limiting across all instances
     - Automatic TTL expiration (no cleanup needed)
     - Action-based limits (different limits per action type)
+    - Dynamic limits from Supabase in production mode
     - Abuse signal tracking
     """
     
-    # Rate limit configurations per action type
-    RATE_LIMITS = {
+    # Default rate limit configurations (used in development mode)
+    DEFAULT_RATE_LIMITS = {
         "api": {"limit": 60, "window": 60},           # 60 requests per minute
-        "generate": {"limit": 2, "window": 3600},     # 2 per hour
-        "voice": {"limit": 5, "window": 3600},        # 5 per hour
-        "redesign": {"limit": 1, "window": 86400},    # 1 per day
-        "publish": {"limit": 10, "window": 3600},     # 10 per hour
-        "edit": {"limit": 20, "window": 3600},        # 20 per hour
+        "generate": {"limit": 5, "window": 3600},     # 5 per hour (increased for testing)
+        "voice": {"limit": 10, "window": 3600},       # 10 per hour
+        "redesign": {"limit": 3, "window": 86400},    # 3 per day
+        "publish": {"limit": 20, "window": 3600},     # 20 per hour
+        "edit": {"limit": 30, "window": 3600},        # 30 per hour
     }
     
     def __init__(self):
@@ -36,6 +39,41 @@ class UpstashRateLimiter:
         self._redis: Optional[Redis] = None
         self._url = settings.upstash_redis_rest_url
         self._token = settings.upstash_redis_rest_token
+        self._is_production = settings.is_production
+        
+        # Cache for dynamic rate limits
+        self._dynamic_limits: Optional[Dict] = None
+        self._limits_fetched_at: float = 0
+        self._cache_ttl = 300  # Cache limits for 5 minutes
+    
+    @property
+    def RATE_LIMITS(self) -> Dict:
+        """Get rate limits (from cache/Supabase in production, defaults in development)."""
+        if not self._is_production:
+            return self.DEFAULT_RATE_LIMITS
+        
+        # Check if cached limits are still valid
+        if self._dynamic_limits and (time.time() - self._limits_fetched_at) < self._cache_ttl:
+            return self._dynamic_limits
+        
+        # Return defaults if not fetched yet (async fetch happens separately)
+        return self._dynamic_limits or self.DEFAULT_RATE_LIMITS
+    
+    async def refresh_limits_from_supabase(self):
+        """Fetch rate limits from Supabase and cache them."""
+        if not self._is_production:
+            return
+        
+        try:
+            from app.services.supabase import supabase_service
+            limits = await supabase_service.get_rate_limits()
+            
+            if limits:
+                self._dynamic_limits = limits
+                self._limits_fetched_at = time.time()
+                print(f"Rate limits refreshed from Supabase: {limits}")
+        except Exception as e:
+            print(f"Failed to refresh rate limits: {e}")
     
     @property
     def redis(self) -> Optional[Redis]:

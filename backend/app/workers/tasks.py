@@ -57,18 +57,28 @@ def save_website(website_data: dict):
 # =============================================================================
 
 @celery_app.task(bind=True, name="generate_website")
-def generate_website_task(self, description: str, language: str = "en"):
+def generate_website_task(
+    self, 
+    description: str, 
+    language: str = "en", 
+    user_id: str = None
+):
     """
     Generate a website from text description.
     
     Args:
         description: Business description text
         language: 'en' or 'hi'
+        user_id: Optional user ID for Supabase storage (production mode)
     
     Returns:
         dict with website_id and status
     """
+    import asyncio
+    from app.core.config import get_settings
+    
     api_key = os.getenv("OPENAI_API_KEY", "")
+    settings = get_settings()
     
     try:
         # Step 1: Parse business description
@@ -98,6 +108,7 @@ def generate_website_task(self, description: str, language: str = "en"):
         # Step 4: Save website
         website_id = f"site_{int(datetime.now().timestamp())}_{os.urandom(4).hex()}"
         
+        # Prepare website data for local storage (always creates this for fallback)
         website_data = {
             "id": website_id,
             "source_type": "text",
@@ -110,7 +121,42 @@ def generate_website_task(self, description: str, language: str = "en"):
             "updated_at": datetime.now().isoformat()
         }
         
-        save_website(website_data)
+        # In production mode with user_id, save to Supabase
+        if settings.is_production and user_id:
+            from app.services.supabase import supabase_service
+            
+            async def save_to_supabase():
+                print(f"Saving website to Supabase for user {user_id}")
+                return await supabase_service.create_website(
+                    owner_id=user_id,
+                    data={
+                        "status": "draft",
+                        "business_json": business.model_dump(),
+                        "layout_json": layout.model_dump(),
+                        "html": html,
+                        "description": description,
+                        "language": language,
+                        "source_type": "text"
+                    }
+                )
+            
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                website_record = loop.run_until_complete(save_to_supabase())
+                website_id = website_record["id"]
+                print(f"Website saved to Supabase with ID: {website_id}")
+            except Exception as e:
+                print(f"ERROR saving to Supabase: {e}")
+                # Fallback: save to local JSON
+                print("Falling back to local JSON storage")
+                save_website(website_data)
+            finally:
+                loop.close()
+        else:
+            # Development mode: save to local JSON
+            print(f"Development mode: saving to local JSON (user_id={user_id}, is_production={settings.is_production})")
+            save_website(website_data)
         
         return {
             "status": "success",

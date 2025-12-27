@@ -90,7 +90,7 @@ async def publish_website_cloudflare(
     """
     Publish a website to Cloudflare Pages.
     
-    Attempts Cloudflare deployment first, falls back to local if not configured.
+    Attempts Cloudflare deployment first, falls back to local ONLY in development mode.
     
     Args:
         website_id: Unique website identifier
@@ -114,7 +114,38 @@ async def publish_website_cloudflare(
         subdomain = f"{original_subdomain}-{counter}"
         counter += 1
     
-    # Try Cloudflare deployment
+    # In production mode, MUST use Cloudflare (no local fallback)
+    if settings.is_production:
+        if not cloudflare_service.is_configured():
+            raise Exception("Production mode requires Cloudflare configuration. Please set CLOUDFLARE_* env variables.")
+        
+        result = await cloudflare_service.deploy_to_pages(
+            website_id=website_id,
+            html_content=html_content,
+            subdomain=subdomain,
+            user_id=user_id
+        )
+        
+        if not result.success:
+            print(f"Cloudflare deployment failed: {result.message}")
+            raise Exception(f"Cloudflare deployment failed: {result.message}")
+        
+        published = PublishedSite(
+            id=website_id,
+            subdomain=result.subdomain,
+            url=result.live_url,
+            published_at=datetime.now().isoformat(),
+            deployment_id=result.deployment_id,
+            ssl_status=result.ssl_status
+        )
+        
+        # Save to local registry as backup
+        sites[website_id] = published.model_dump()
+        save_published_sites(sites)
+        
+        return published
+    
+    # Development mode: try Cloudflare, but fallback to local if not configured or fails
     if cloudflare_service.is_configured():
         result = await cloudflare_service.deploy_to_pages(
             website_id=website_id,
@@ -138,8 +169,10 @@ async def publish_website_cloudflare(
             save_published_sites(sites)
             
             return published
+        else:
+            print(f"Cloudflare deployment failed in dev mode, falling back to local: {result.message}")
     
-    # Fallback to local deployment
+    # Fallback to local deployment (development mode only)
     return publish_website_local(website_id, html_content, subdomain)
 
 

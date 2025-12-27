@@ -229,7 +229,7 @@ export default function EditorPage() {
                                     <div className="frame-dots">
                                         <span></span><span></span><span></span>
                                     </div>
-                                    <div className="frame-url">{businessName.toLowerCase().replace(/\s+/g, '-') || 'your-site'}.setu.in</div>
+                                    <div className="frame-url">{businessName.toLowerCase().replace(/\s+/g, '-') || 'your-site'}.laxizen.fun</div>
                                 </div>
                                 <iframe
                                     srcDoc={websiteHtml}

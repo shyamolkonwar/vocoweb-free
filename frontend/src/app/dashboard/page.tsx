@@ -8,7 +8,10 @@ import { useAuth } from '@/context/AuthContext';
 
 interface Website {
     id: string;
-    business?: {
+    status: string;
+    subdomain?: string;
+    live_url?: string;
+    business_json?: {
         business_name?: string;
         business_type?: string;
     };
@@ -17,10 +20,17 @@ interface Website {
     source_type: string;
 }
 
+interface Credits {
+    balance: number;
+    lifetime_earned: number;
+    lifetime_spent: number;
+}
+
 export default function DashboardPage() {
     const [language, setLanguage] = useState<'en' | 'hi'>('en');
     const [websites, setWebsites] = useState<Website[]>([]);
-    const [isLoadingWebsites, setIsLoadingWebsites] = useState(true);
+    const [credits, setCredits] = useState<Credits>({ balance: 0, lifetime_earned: 0, lifetime_spent: 0 });
+    const [isLoadingData, setIsLoadingData] = useState(true);
     const router = useRouter();
     const { user, isLoading, isAuthenticated, logout } = useAuth();
 
@@ -39,7 +49,7 @@ export default function DashboardPage() {
             creditsInfo: 'Used for creating & editing websites',
             buyCredits: 'Buy More Credits',
             draft: 'Draft',
-            live: 'Live',
+            live: 'Published',
             logout: 'Logout'
         },
         hi: {
@@ -56,7 +66,7 @@ export default function DashboardPage() {
             creditsInfo: 'Website बनाने और edit करने में use होते हैं',
             buyCredits: 'और Credits खरीदें',
             draft: 'Draft',
-            live: 'Live',
+            live: 'Published',
             logout: 'Logout करें'
         }
     };
@@ -70,21 +80,26 @@ export default function DashboardPage() {
         }
     }, [isAuthenticated, isLoading, router]);
 
-    // Fetch user's websites
+    // Fetch user's websites and credits
     useEffect(() => {
-        const fetchWebsites = async () => {
+        const fetchDashboardData = async () => {
             try {
-                // TODO: Fetch from API when user-website association is implemented
-                setWebsites([]);
+                const response = await fetch('/api/dashboard');
+                const data = await response.json();
+
+                if (response.ok) {
+                    setWebsites(data.websites || []);
+                    setCredits(data.credits || { balance: 0, lifetime_earned: 0, lifetime_spent: 0 });
+                }
             } catch (error) {
-                console.error('Failed to fetch websites:', error);
+                console.error('Failed to fetch dashboard data:', error);
             } finally {
-                setIsLoadingWebsites(false);
+                setIsLoadingData(false);
             }
         };
 
         if (isAuthenticated) {
-            fetchWebsites();
+            fetchDashboardData();
         }
     }, [isAuthenticated]);
 
@@ -143,7 +158,7 @@ export default function DashboardPage() {
                             <div className="card-icon">🎯</div>
                             <div className="card-content">
                                 <h3>{t.credits}</h3>
-                                <p className="card-stat">100</p>
+                                <p className="card-stat">{credits.balance}</p>
                                 <p className="card-subtitle">{t.creditsInfo}</p>
                             </div>
                         </div>
@@ -160,7 +175,7 @@ export default function DashboardPage() {
                     <section className="dashboard-section">
                         <h2>{t.myWebsites}</h2>
 
-                        {isLoadingWebsites ? (
+                        {isLoadingData ? (
                             <div className="websites-loading">
                                 <div className="spinner"></div>
                             </div>
@@ -177,10 +192,12 @@ export default function DashboardPage() {
                                 {websites.map((website) => (
                                     <div key={website.id} className="website-card">
                                         <div className="website-card-header">
-                                            <h3>{website.business?.business_name || 'Untitled Website'}</h3>
-                                            <span className="website-badge draft">{t.draft}</span>
+                                            <h3>{website.business_json?.business_name || 'Untitled Website'}</h3>
+                                            <span className={`website-badge ${website.status === 'live' ? 'live' : 'draft'}`}>
+                                                {website.status === 'live' ? t.live : t.draft}
+                                            </span>
                                         </div>
-                                        <p className="website-type">{website.business?.business_type || 'Business'}</p>
+                                        <p className="website-type">{website.business_json?.business_type || 'Business'}</p>
                                         <div className="website-card-actions">
                                             <Link href={`/editor/${website.id}`} className="btn-secondary btn-small">
                                                 {t.edit}

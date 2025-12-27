@@ -15,7 +15,7 @@ export default function LoginPage() {
 
     const content = {
         en: {
-            title: "Welcome to Setu",
+            title: "Welcome to Laxizen",
             subtitle: "Sign in to manage your websites and publish them live",
             benefits: [
                 "Create unlimited website drafts",
@@ -24,7 +24,7 @@ export default function LoginPage() {
             ]
         },
         hi: {
-            title: "Setu में आपका स्वागत है",
+            title: "Laxizen में आपका स्वागत है",
             subtitle: "अपनी websites manage और publish करने के लिए sign in करें",
             benefits: [
                 "Unlimited website drafts बनाएं",

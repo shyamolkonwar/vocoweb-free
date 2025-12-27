@@ -192,6 +192,7 @@ class SupabaseService:
             Created website record
         """
         if not self.is_configured():
+            print("ERROR: Supabase not configured for create_website")
             raise ValueError("Supabase not configured")
         
         website_data = {
@@ -205,12 +206,20 @@ class SupabaseService:
             "source_type": data.get("source_type", "text"),
         }
         
-        response = self.client.table("websites").insert(website_data).execute()
+        print(f"Creating website in Supabase for owner: {owner_id}")
         
-        if response.data:
-            return response.data[0]
-        else:
-            raise Exception("Failed to create website")
+        try:
+            response = self.client.table("websites").insert(website_data).execute()
+            
+            if response.data:
+                print(f"Website created successfully: {response.data[0].get('id')}")
+                return response.data[0]
+            else:
+                print("ERROR: create_website - no data returned from Supabase")
+                raise Exception("Failed to create website - no data returned")
+        except Exception as e:
+            print(f"ERROR: create_website failed: {e}")
+            raise
     
     async def get_website(
         self, 
@@ -591,6 +600,100 @@ class SupabaseService:
         return True
     
     # ========================================
+    # USAGE LIMITS METHODS
+    # ========================================
+    
+    async def increment_usage_limit(
+        self, 
+        user_id: str, 
+        action: str
+    ) -> bool:
+        """
+        Increment usage counter for a specific action.
+        
+        Args:
+            user_id: auth.users.id
+            action: 'generate', 'voice', 'edit', 'redesign', 'publish'
+        
+        Returns:
+            True if updated successfully
+        """
+        if not self.is_configured():
+            return True
+        
+        # Map actions to column names
+        column_map = {
+            "generate": "daily_generates",
+            "voice": "daily_voice_generates",
+            "edit": "daily_edits",
+            "redesign": "daily_redesigns",
+            "publish": "published_sites"
+        }
+        
+        column = column_map.get(action)
+        if not column:
+            print(f"Unknown action for usage tracking: {action}")
+            return True
+        
+        try:
+            # Get current usage
+            response = self.client.table("usage_limits")\
+                .select("*")\
+                .eq("user_id", user_id)\
+                .execute()
+            
+            if response.data and len(response.data) > 0:
+                current = response.data[0]
+                new_value = current.get(column, 0) + 1
+                
+                # Update the counter
+                self.client.table("usage_limits")\
+                    .update({
+                        column: new_value,
+                        "updated_at": datetime.utcnow().isoformat()
+                    })\
+                    .eq("user_id", user_id)\
+                    .execute()
+                
+                print(f"Usage updated: {column} = {new_value} for user {user_id}")
+                return True
+            else:
+                # Create initial record
+                initial_data = {
+                    "user_id": user_id,
+                    column: 1,
+                    "last_reset_date": datetime.utcnow().date().isoformat()
+                }
+                self.client.table("usage_limits").insert(initial_data).execute()
+                print(f"Created usage_limits record for user {user_id}")
+                return True
+                
+        except Exception as e:
+            print(f"Error updating usage limits: {e}")
+            return False
+    
+    async def log_usage(
+        self, 
+        user_id: str, 
+        action: str, 
+        details: Optional[Dict[str, Any]] = None
+    ) -> bool:
+        """Log a usage event."""
+        if not self.is_configured():
+            return True
+        
+        try:
+            self.client.table("usage_logs").insert({
+                "user_id": user_id,
+                "action": action,
+                "details": details or {}
+            }).execute()
+            return True
+        except Exception as e:
+            print(f"Error logging usage: {e}")
+            return False
+    
+    # ========================================
     # DEPLOYMENT METHODS
     # ========================================
     
@@ -604,10 +707,19 @@ class SupabaseService:
     ) -> Dict[str, Any]:
         """Record a Cloudflare deployment."""
         if not self.is_configured():
-            raise ValueError("Supabase not configured")
+            print("Supabase not configured, skipping deployment save")
+            return {"id": None, "subdomain": subdomain, "live_url": live_url}
+        
+        # Check if website_id is a valid UUID
+        is_uuid = False
+        try:
+            import uuid as uuid_module
+            uuid_module.UUID(str(website_id))
+            is_uuid = True
+        except (ValueError, TypeError):
+            is_uuid = False
         
         deployment_data = {
-            "website_id": website_id,
             "deployment_id": deployment_id,
             "subdomain": subdomain,
             "live_url": live_url,
@@ -616,12 +728,24 @@ class SupabaseService:
             "deployed_by": deployed_by
         }
         
-        response = self.client.table("deployments").insert(deployment_data).execute()
-        
-        if response.data:
-            return response.data[0]
+        # Use website_id only if it's a valid UUID, otherwise use external_id
+        if is_uuid:
+            deployment_data["website_id"] = website_id
         else:
-            raise Exception("Failed to create deployment record")
+            deployment_data["external_id"] = website_id
+        
+        try:
+            response = self.client.table("deployments").insert(deployment_data).execute()
+            
+            if response.data:
+                print(f"Deployment saved: {response.data[0]}")
+                return response.data[0]
+            else:
+                print("Failed to create deployment record - no data returned")
+                return {"id": None, "subdomain": subdomain, "live_url": live_url}
+        except Exception as e:
+            print(f"Error creating deployment: {e}")
+            return {"id": None, "subdomain": subdomain, "live_url": live_url}
     
     async def get_deployment(self, website_id: str) -> Optional[Dict[str, Any]]:
         """Get the latest deployment for a website."""
@@ -639,6 +763,65 @@ class SupabaseService:
         if response.data and len(response.data) > 0:
             return response.data[0]
         return None
+    
+    # ========================================
+    # RATE LIMITS METHODS
+    # ========================================
+    
+    async def get_rate_limits(self) -> Dict[str, Dict[str, int]]:
+        """
+        Fetch all rate limits from Supabase.
+        Returns dict of action -> {limit, window_seconds}
+        """
+        if not self.is_configured():
+            return {}
+        
+        try:
+            response = self.client.table("rate_limits")\
+                .select("*")\
+                .eq("is_active", True)\
+                .execute()
+            
+            limits = {}
+            for row in response.data or []:
+                limits[row["action"]] = {
+                    "limit": row["limit_count"],
+                    "window": row["window_seconds"]
+                }
+            
+            return limits
+        except Exception as e:
+            print(f"Error fetching rate limits: {e}")
+            return {}
+    
+    async def update_rate_limit(
+        self, 
+        action: str, 
+        limit_count: Optional[int] = None,
+        window_seconds: Optional[int] = None
+    ) -> bool:
+        """Update a rate limit configuration."""
+        if not self.is_configured():
+            return False
+        
+        updates = {}
+        if limit_count is not None:
+            updates["limit_count"] = limit_count
+        if window_seconds is not None:
+            updates["window_seconds"] = window_seconds
+        
+        if not updates:
+            return False
+        
+        try:
+            self.client.table("rate_limits")\
+                .update(updates)\
+                .eq("action", action)\
+                .execute()
+            return True
+        except Exception as e:
+            print(f"Error updating rate limit: {e}")
+            return False
 
 
 # Global instance

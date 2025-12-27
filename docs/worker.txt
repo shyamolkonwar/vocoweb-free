@@ -1,0 +1,121 @@
+Step 1: Change Your Deployment Strategy
+Currently, you might be deploying everything to production. To make the "Proxy" work effectively, we need a predictable URL for every user. We will use Cloudflare Pages Branches.
+
+When a user creates a site (let's say their site ID is super-shop), do not deploy to production. Deploy to a branch named super-shop.
+
+Run this command in your backend:
+
+Bash
+# Replace 'dist' with your build folder
+# Replace 'super-shop' with the unique subdomain you want the user to have
+npx wrangler pages deploy dist --project-name user-websites --branch super-shop
+The Result: Cloudflare automatically creates this URL: https://super-shop.user-websites.pages.dev
+
+Test this manually first to make sure the URL works.
+
+Step 2: Configure DNS (The Wildcard)
+We need to tell Cloudflare to send all subdomain traffic to the Worker we are about to build.
+Log in to the Cloudflare Dashboard.
+Go to DNS > Records for laxizen.fun.
+Click Add Record.
+Type: A
+Name: * (This is the wildcard)
+IPv4 Address: 192.0.2.1 (This is a dummy IP. It doesn't matter because the Worker will intercept the traffic before it hits this IP.)
+Proxy Status: Make sure the Orange Cloud is ON (Proxied).
+Click Save.
+Step 3: Create the Worker
+Now we write the code that connects the dots.
+Create a new folder on your computer for this project, e.g., proxy-worker.
+Open your terminal in this folder.
+Initialize a simple project:
+Bash
+npm init -y
+npm install wrangler --save-dev
+Create a file named wrangler.toml and paste this:
+Ini, TOML
+name = "proxy-worker"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# This connects the worker to your domain
+# Note the /* at the end to match all paths
+routes = [
+	{ pattern = "*.laxizen.fun/*", zone_name = "laxizen.fun" }
+]
+Create a folder named src and inside it, a file named index.js. Paste this code:
+JavaScript
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+
+    // 1. Get the subdomain (e.g., "test-site" from "test-site.laxizen.fun")
+    const hostname = url.hostname;
+    
+    // Split the hostname by dots
+    const parts = hostname.split('.');
+    
+    // If we are on the root domain (laxizen.fun) or www, do nothing or redirect
+    // Adjust '2' if you have a complex TLD like .co.uk (would be 3)
+    if (parts.length <= 2 || parts[0] === 'www') {
+       // Optional: Redirect root to your main landing page
+       return Response.redirect('https://laxizen.fun', 301);
+    }
+
+    const subdomain = parts[0];
+
+    // 2. Construct the Target URL
+    // We want to fetch: https://<subdomain>.user-websites.pages.dev/path
+    const targetHost = `${subdomain}.user-websites.pages.dev`;
+    const targetUrl = new URL(request.url);
+    targetUrl.hostname = targetHost;
+
+    // 3. Create a new request to the target
+    // We must modify the request to ensure Cloudflare Pages accepts it
+    const proxyRequest = new Request(targetUrl, {
+      method: request.method,
+      headers: request.headers,
+      body: request.body,
+      redirect: 'manual' // Let the worker handle redirects
+    });
+
+    // Important: Pages expects the 'Host' header to match the .pages.dev domain
+    proxyRequest.headers.set('Host', targetHost);
+
+    // 4. Fetch the content
+    try {
+      const response = await fetch(proxyRequest);
+
+      // 5. Return the response to the user
+      // We clone the response to modify headers if needed (like security headers)
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers
+      });
+
+    } catch (e) {
+      // If something goes wrong (e.g., user site doesn't exist)
+      return new Response("Site not found or Error connecting to Pages.", { status: 404 });
+    }
+  },
+};
+Step 4: Deploy the Worker
+In your terminal (inside the proxy-worker folder), login to Cloudflare:
+Bash
+npx wrangler login
+(A browser window will open; click Allow).
+Deploy the worker:
+Bash
+npx wrangler deploy
+Step 5: Verify Everything
+Now, let's trace the flow to ensure it works.
+Deploy a test site: Run your backend deployment command: npx wrangler pages deploy dist --project-name user-websites --branch test-b-123
+Wait 10 seconds for the Pages deployment to finish.
+Visit in Browser: https://test-b-123.laxizen.fun
+What happens underneath:
+Browser asks DNS for test-b-123.laxizen.fun.
+Cloudflare says "I handle that".
+Cloudflare sees the Route *.laxizen.fun/* and wakes up your Worker.
+Your Worker calculates targetHost = test-b-123.user-websites.pages.dev.
+Your Worker fetches that URL invisibly.
+Your Browser shows the content, but the URL bar stays as test-b-123.laxizen.fun.

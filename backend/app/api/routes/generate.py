@@ -61,17 +61,37 @@ def save_website(website_data: dict):
 
 
 @router.post("/generate", response_model=GenerateResponse)
-async def generate_website(request: GenerateRequest):
+async def generate_website(
+    request: GenerateRequest,
+    user: AuthUser = Depends(require_auth)
+):
     """
-    Generate a website from text description.
+    Generate a website from text description (synchronous).
     
     Pipeline:
     1. Parse business description (OpenAI)
     2. Select layout (rules engine)
     3. Build HTML (template engine)
-    4. Store and return ID
+    4. Store to Supabase (production) or local JSON (dev)
     """
+    from app.services.supabase import supabase_service
+    
     settings = get_settings()
+    
+    # Check rate limit
+    is_allowed, message, remaining = check_rate_limit(user.user_id, "generate")
+    if not is_allowed:
+        upstash_rate_limiter.track_abuse_signal(user.user_id, "limit_violations")
+        raise HTTPException(status_code=429, detail=message)
+    
+    # In production mode, check and deduct credits
+    if settings.is_production:
+        has_credits = await supabase_service.check_credits(user.user_id, "generate")
+        if not has_credits:
+            raise HTTPException(
+                status_code=402,
+                detail="Insufficient credits. Please purchase more credits."
+            )
     
     try:
         # Step 1: Parse business description
@@ -90,18 +110,61 @@ async def generate_website(request: GenerateRequest):
         # Step 4: Store website
         website_id = f"site_{int(datetime.now().timestamp())}_{os.urandom(4).hex()}"
         
-        website_data = {
-            "id": website_id,
-            "description": request.description,
-            "language": request.language,
-            "business": business.model_dump(),
-            "layout": layout.model_dump(),
-            "html": html,
-            "created_at": datetime.now().isoformat(),
-            "updated_at": datetime.now().isoformat()
-        }
-        
-        save_website(website_data)
+        # In production mode, save to Supabase
+        if settings.is_production:
+            try:
+                print(f"Saving website to Supabase for user {user.user_id}")
+                website_record = await supabase_service.create_website(
+                    owner_id=user.user_id,
+                    data={
+                        "status": "draft",
+                        "business_json": business.model_dump(),
+                        "layout_json": layout.model_dump(),
+                        "html": html,
+                        "description": request.description,
+                        "language": request.language,
+                        "source_type": "text"
+                    }
+                )
+                website_id = website_record["id"]
+                print(f"Website saved to Supabase: {website_id}")
+                
+                # Deduct credits after successful generation
+                await supabase_service.deduct_credits(
+                    user.user_id, 
+                    "generate", 
+                    f"Generated website: {business.business_name}"
+                )
+                
+                # Track usage
+                await supabase_service.increment_usage_limit(user.user_id, "generate")
+            except Exception as e:
+                print(f"ERROR saving to Supabase: {e}")
+                # Fallback to local storage
+                website_data = {
+                    "id": website_id,
+                    "description": request.description,
+                    "language": request.language,
+                    "business": business.model_dump(),
+                    "layout": layout.model_dump(),
+                    "html": html,
+                    "created_at": datetime.now().isoformat(),
+                    "updated_at": datetime.now().isoformat()
+                }
+                save_website(website_data)
+        else:
+            # Development mode: save to local JSON
+            website_data = {
+                "id": website_id,
+                "description": request.description,
+                "language": request.language,
+                "business": business.model_dump(),
+                "layout": layout.model_dump(),
+                "html": html,
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat()
+            }
+            save_website(website_data)
         
         return GenerateResponse(
             id=website_id,
@@ -110,6 +173,8 @@ async def generate_website(request: GenerateRequest):
             location=business.location
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
 
@@ -132,6 +197,9 @@ async def generate_website_async(
     Poll /api/tasks/{task_id} to check status.
     """
     from app.workers.tasks import generate_website_task
+    from app.services.supabase import supabase_service
+    
+    settings = get_settings()
     
     # Check rate limit before enqueueing task
     is_allowed, message, remaining = check_rate_limit(user.user_id, "generate")
@@ -150,10 +218,27 @@ async def generate_website_async(
             detail="Too many violations. Please try again later."
         )
     
-    # Queue the task
+    # In production mode, check and deduct credits
+    if settings.is_production:
+        has_credits = await supabase_service.check_credits(user.user_id, "generate")
+        if not has_credits:
+            raise HTTPException(
+                status_code=402,
+                detail="Insufficient credits. Please purchase more credits."
+            )
+        
+        # Deduct credits
+        await supabase_service.deduct_credits(
+            user.user_id, 
+            "generate", 
+            f"Website generation: {request.description[:50]}..."
+        )
+    
+    # Queue the task (with user_id for Supabase storage in production)
     task = generate_website_task.delay(
         description=request.description,
-        language=request.language
+        language=request.language,
+        user_id=user.user_id if settings.is_production else None
     )
     
     return AsyncGenerateResponse(
@@ -165,6 +250,30 @@ async def generate_website_async(
 @router.get("/preview/{website_id}")
 async def get_preview(website_id: str):
     """Get website preview by ID."""
+    from app.services.supabase import supabase_service
+    import uuid as uuid_module
+    
+    # Check if it's a UUID (Supabase website) or site_* (local)
+    is_uuid = False
+    try:
+        uuid_module.UUID(str(website_id))
+        is_uuid = True
+    except (ValueError, TypeError):
+        is_uuid = False
+    
+    # For UUID websites, check Supabase first
+    if is_uuid:
+        settings = get_settings()
+        if settings.is_production:
+            website = await supabase_service.get_website(website_id)
+            if website:
+                return {
+                    "id": website_id,
+                    "html": website.get("html", ""),
+                    "business": website.get("business_json", {})
+                }
+    
+    # Fallback to local JSON storage
     websites = load_websites()
     
     if website_id not in websites:

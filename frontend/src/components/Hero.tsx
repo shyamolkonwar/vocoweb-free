@@ -87,7 +87,7 @@ export default function Hero({ language }: HeroProps) {
                 <span></span>
                 <span></span>
               </div>
-              <div className="preview-url">yoursite.setu.in</div>
+              <div className="preview-url">yoursite.laxizen.fun</div>
             </div>
             <div className="preview-content">
               <div className="preview-hero-block"></div>

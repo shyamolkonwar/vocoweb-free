@@ -231,13 +231,13 @@ export default function PreviewPage() {
                                         className={`view-btn ${viewMode === 'mobile' ? 'active' : ''}`}
                                         onClick={() => setViewMode('mobile')}
                                     >
-                                        📱 {t.mobile}
+                                        {t.mobile}
                                     </button>
                                     <button
                                         className={`view-btn ${viewMode === 'desktop' ? 'active' : ''}`}
                                         onClick={() => setViewMode('desktop')}
                                     >
-                                        💻 {t.desktop}
+                                        {t.desktop}
                                     </button>
                                 </div>
                             </div>
@@ -247,7 +247,7 @@ export default function PreviewPage() {
                                     href={`/editor/${id}`}
                                     className="btn-secondary"
                                 >
-                                    ✏️ {t.editWebsite}
+                                    {t.editWebsite}
                                 </a>
                                 <button
                                     onClick={handleRegenerate}
@@ -289,7 +289,7 @@ export default function PreviewPage() {
                                         <span></span><span></span><span></span>
                                     </div>
                                     <div className="frame-url">
-                                        {publishData?.subdomain || websiteData?.business?.business_name?.toLowerCase().replace(/\s+/g, '-') || 'your-site'}.setu.in
+                                        {publishData?.subdomain || websiteData?.business?.business_name?.toLowerCase().replace(/\s+/g, '-') || 'your-site'}.laxizen.fun
                                     </div>
                                 </div>
                                 <iframe
