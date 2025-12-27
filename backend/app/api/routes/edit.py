@@ -256,3 +256,81 @@ async def quick_edit(website_id: str, field: str, value: str):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Quick edit failed: {str(e)}")
+
+
+class HtmlSaveRequest(BaseModel):
+    """Request to save full HTML from visual editor."""
+    html: str = Field(..., min_length=100)
+    page: str = "index.html"
+
+
+@router.put("/edit/{website_id}/html")
+async def save_html(website_id: str, request: HtmlSaveRequest):
+    """
+    Save full HTML content from the visual editor.
+    This is called when user makes inline edits in the WYSIWYG editor.
+    """
+    websites = load_websites()
+    
+    if website_id not in websites:
+        raise HTTPException(status_code=404, detail="Website not found")
+    
+    website = websites[website_id]
+    
+    try:
+        # Clean the HTML (remove editor artifacts like data-lid, lx-selected, etc.)
+        cleaned_html = _clean_editor_html(request.html)
+        
+        # Save HTML
+        if request.page == "index.html" or not website.get("pages"):
+            # Single-page website: save to html field
+            website["html"] = cleaned_html
+        else:
+            # Multi-page: save to the specific page
+            if "pages" not in website:
+                website["pages"] = {}
+            website["pages"][request.page] = cleaned_html
+        
+        website["updated_at"] = datetime.now().isoformat()
+        website["edit_history"] = website.get("edit_history", [])
+        website["edit_history"].append({
+            "type": "visual_edit",
+            "page": request.page,
+            "timestamp": datetime.now().isoformat()
+        })
+        
+        save_website(website)
+        
+        return {
+            "success": True,
+            "page": request.page,
+            "updated_at": website["updated_at"]
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Save failed: {str(e)}")
+
+
+def _clean_editor_html(html: str) -> str:
+    """
+    Clean editor artifacts from HTML before saving.
+    Removes data-lid attributes, selection classes, and editor scripts.
+    """
+    import re
+    
+    # Remove editor styles
+    html = re.sub(r'<style id="laxizen-editor-styles">.*?</style>', '', html, flags=re.DOTALL)
+    
+    # Remove editor script references
+    html = re.sub(r'<script src="/scripts/editor-agent\.js"></script>', '', html)
+    
+    # Remove lx-selected class (but keep other classes)
+    html = re.sub(r'\s+class="([^"]*)\blx-selected\b([^"]*)"', lambda m: f' class="{m.group(1)}{m.group(2)}"'.replace('  ', ' ').strip(), html)
+    
+    # Remove empty class attributes that might result
+    html = re.sub(r'\s+class="\s*"', '', html)
+    
+    # Remove edit indicator elements
+    html = re.sub(r'<[^>]*class="[^"]*lx-edit-indicator[^"]*"[^>]*>.*?</[^>]*>', '', html, flags=re.DOTALL)
+    
+    return html

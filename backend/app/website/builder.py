@@ -100,6 +100,60 @@ def get_business_icon(business_type: str) -> str:
     return icons.get(business_type, "🏢")
 
 
+def inject_navigation_script(html_content: str) -> str:
+    """
+    Inject a postMessage-based navigation interceptor into HTML content.
+    This allows multi-page preview navigation without breaking out of the iframe.
+    
+    Args:
+        html_content: The HTML string to inject the script into
+        
+    Returns:
+        HTML with navigation interceptor script injected
+    """
+    script = """
+    <script>
+      (function() {
+        // Preview Navigation Interceptor
+        document.addEventListener('DOMContentLoaded', function() {
+          document.body.addEventListener('click', function(e) {
+            var link = e.target.closest('a');
+            
+            if (link) {
+              var href = link.getAttribute('href');
+              
+              // Skip external links, anchors, tel/mailto
+              if (!href) return;
+              if (href.startsWith('http://') || href.startsWith('https://')) return;
+              if (href.startsWith('#')) return;
+              if (href.startsWith('tel:') || href.startsWith('mailto:')) return;
+              if (href.startsWith('javascript:')) return;
+              
+              // Internal link - intercept and send to parent
+              e.preventDefault();
+              e.stopPropagation();
+              
+              // Send message to parent (Next.js preview page)
+              window.parent.postMessage({
+                type: 'NAVIGATE_PREVIEW',
+                payload: href
+              }, '*');
+            }
+          }, true);
+        });
+      })();
+    </script>
+    """
+    
+    # Inject before </body> or at end
+    if '</body>' in html_content:
+        return html_content.replace('</body>', f'{script}</body>')
+    elif '</html>' in html_content:
+        return html_content.replace('</html>', f'{script}</html>')
+    else:
+        return html_content + script
+
+
 async def build_website(
     business: BusinessProfile,
     layout: LayoutBlueprint,
@@ -253,3 +307,278 @@ def build_website_sync(
     }
     
     return env.get_template("base.html").render(**full_context)
+
+
+# ============================================
+# MULTI-PAGE BUILDER (v2.0)
+# ============================================
+
+def get_page_config() -> Dict[str, Dict[str, Any]]:
+    """Define the pages to generate for multi-page websites."""
+    return {
+        "index.html": {
+            "title_suffix": "",
+            "sections": ["hero", "services_preview", "testimonials", "cta"],
+            "show_popup": True,
+        },
+        "services.html": {
+            "title_suffix": " - Services",
+            "sections": ["services_full"],
+            "show_popup": False,
+        },
+        "about.html": {
+            "title_suffix": " - About Us",
+            "sections": ["about_full", "team"],
+            "show_popup": False,
+        },
+        "contact.html": {
+            "title_suffix": " - Contact",
+            "sections": ["contact_form", "map"],
+            "show_popup": False,
+        },
+    }
+
+
+def get_navigation_config(business_name: str, language: str = "en") -> list:
+    """Generate navigation links for multi-page website."""
+    labels = get_labels(language)
+    return [
+        {"url": "index.html", "label": labels.get("home", "Home")},
+        {"url": "services.html", "label": labels.get("services", "Services")},
+        {"url": "about.html", "label": labels.get("about", "About Us")},
+        {"url": "contact.html", "label": labels.get("contact", "Contact")},
+    ]
+
+
+async def build_multipage_website(
+    business: BusinessProfile,
+    layout: LayoutBlueprint,
+    language: str = "en",
+    images: Optional[Dict[str, str]] = None,
+    website_id: Optional[str] = None,
+    api_url: str = "https://api.laxizen.fun",
+    popup_config: Optional[Dict[str, Any]] = None
+) -> Dict[str, str]:
+    """
+    Generate a multi-page website as a dictionary of HTML files.
+    
+    Args:
+        business: Structured business information
+        layout: Layout configuration with component variants
+        language: Output language ('en' or 'hi')
+        images: Optional dict with image URLs
+        website_id: UUID for lead form submissions
+        api_url: Backend API URL for forms
+        popup_config: Optional popup settings
+    
+    Returns:
+        Dict mapping filenames to HTML content
+    """
+    env = get_jinja_env()
+    labels = get_labels(language)
+    
+    # Get images from Pexels if not provided
+    if images is None:
+        from ..services.pexels_service import get_pexels_service
+        pexels = get_pexels_service()
+        images = await pexels.get_images_for_website(business.business_type)
+    
+    # Navigation config
+    pages = get_navigation_config(business.business_name, language)
+    
+    # Default popup config
+    if popup_config is None:
+        popup_config = {
+            "enabled": True,
+            "headline": "Get a Free Quote!",
+            "subheadline": "Fill in your details and we'll get back to you.",
+            "offer_text": None,
+            "trigger_type": "time",
+            "trigger_delay_seconds": 5,
+        }
+    
+    # Common context for all templates
+    base_context = {
+        # Business info
+        "business_name": business.business_name,
+        "business_type": business.business_type,
+        "business_icon": get_business_icon(business.business_type),
+        "location": business.location,
+        "tagline": business.tagline,
+        "description": business.description,
+        "services": business.services,
+        "cta": business.cta,
+        
+        # Styling
+        "primary_color": layout.primary_color,
+        "accent_color": layout.accent_color,
+        "font_heading": layout.font_heading,
+        "font_body": layout.font_body,
+        
+        # Images
+        "hero_image": images.get("hero", ""),
+        "about_image": images.get("about", ""),
+        "services_image": images.get("services", ""),
+        
+        # Labels
+        "labels": labels,
+        
+        # Language
+        "language": language,
+        
+        # Navigation
+        "pages": pages,
+        
+        # Lead capture
+        "website_id": website_id or "",
+        "api_url": api_url,
+        
+        # Popup
+        "popup_enabled": popup_config.get("enabled", True),
+        "popup_headline": popup_config.get("headline", "Get a Free Quote!"),
+        "popup_subheadline": popup_config.get("subheadline", ""),
+        "offer_text": popup_config.get("offer_text"),
+        "popup_trigger": popup_config.get("trigger_type", "time"),
+        "popup_delay": popup_config.get("trigger_delay_seconds", 5),
+        
+        # Meta
+        "meta_description": business.description[:160],
+        "current_year": datetime.now().year
+    }
+    
+    output_pages = {}
+    
+    # Generate INDEX.HTML (Home)
+    index_context = {
+        **base_context,
+        "page_title": business.business_name,
+        "current_page": "index",
+        "hero_section": env.get_template(f"heroes/{layout.hero_variant}.html").render(**base_context),
+        "services_section": env.get_template(f"services/{layout.services_variant}.html").render(**base_context),
+        "contact_section": "",  # Not on home page
+        "about_section": "",  # Summary only
+        "footer_section": env.get_template(f"footer/{layout.footer_variant}.html").render(**base_context),
+        "popup_section": env.get_template("forms/modal_popup.html").render(**base_context) if popup_config.get("enabled", True) else "",
+    }
+    output_pages["index.html"] = env.get_template("base.html").render(**index_context)
+    
+    # Generate SERVICES.HTML
+    services_context = {
+        **base_context,
+        "page_title": f"{business.business_name} - Services",
+        "current_page": "services",
+        "hero_section": f"""
+            <section class="pt-32 pb-16 px-4" style="background: linear-gradient(135deg, {layout.primary_color}10 0%, {layout.accent_color}05 100%);">
+                <div class="max-w-4xl mx-auto text-center">
+                    <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4" style="font-family: '{layout.font_heading}', sans-serif;">
+                        {labels.get('our_services', 'Our Services')}
+                    </h1>
+                    <p class="text-xl text-gray-600">{labels.get('services_subtitle', 'Professional solutions tailored to your needs')}</p>
+                </div>
+            </section>
+        """,
+        "services_section": env.get_template(f"services/{layout.services_variant}.html").render(**base_context),
+        "contact_section": "",
+        "about_section": "",
+        "footer_section": env.get_template(f"footer/{layout.footer_variant}.html").render(**base_context),
+        "popup_section": "",
+    }
+    output_pages["services.html"] = env.get_template("base.html").render(**services_context)
+    
+    # Generate ABOUT.HTML
+    about_context = {
+        **base_context,
+        "page_title": f"{business.business_name} - About Us",
+        "current_page": "about",
+        "hero_section": f"""
+            <section class="pt-32 pb-16 px-4" style="background: linear-gradient(135deg, {layout.primary_color}10 0%, {layout.accent_color}05 100%);">
+                <div class="max-w-4xl mx-auto text-center">
+                    <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4" style="font-family: '{layout.font_heading}', sans-serif;">
+                        {labels.get('about_us', 'About Us')}
+                    </h1>
+                    <p class="text-xl text-gray-600">{labels.get('about_headline', 'Committed to Excellence')}</p>
+                </div>
+            </section>
+        """,
+        "services_section": "",
+        "contact_section": "",
+        "about_section": env.get_template(f"about/{layout.about_variant}.html").render(**base_context),
+        "footer_section": env.get_template(f"footer/{layout.footer_variant}.html").render(**base_context),
+        "popup_section": "",
+    }
+    output_pages["about.html"] = env.get_template("base.html").render(**about_context)
+    
+    # Generate CONTACT.HTML
+    contact_context = {
+        **base_context,
+        "page_title": f"{business.business_name} - Contact",
+        "current_page": "contact",
+        "form_headline": labels.get("get_in_touch", "Get In Touch"),
+        "form_subheadline": labels.get("contact_subtitle", "We'd love to hear from you"),
+        "hero_section": f"""
+            <section class="pt-32 pb-16 px-4" style="background: linear-gradient(135deg, {layout.primary_color}10 0%, {layout.accent_color}05 100%);">
+                <div class="max-w-4xl mx-auto text-center">
+                    <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4" style="font-family: '{layout.font_heading}', sans-serif;">
+                        {labels.get('contact_us', 'Contact Us')}
+                    </h1>
+                    <p class="text-xl text-gray-600">{labels.get('contact_subtitle', "We'd love to hear from you")}</p>
+                </div>
+            </section>
+        """,
+        "services_section": "",
+        "contact_section": env.get_template(f"contact/{layout.contact_variant}.html").render(**base_context),
+        "about_section": "",
+        "footer_section": env.get_template(f"footer/{layout.footer_variant}.html").render(**base_context),
+        "popup_section": "",
+        # Include inline form
+        "inline_form": env.get_template("forms/inline_booking_form.html").render(**base_context),
+    }
+    output_pages["contact.html"] = env.get_template("base.html").render(**contact_context)
+    
+    # Inject navigation script into all pages for multi-page preview
+    for page_name in output_pages:
+        output_pages[page_name] = inject_navigation_script(output_pages[page_name])
+    
+    return output_pages
+
+
+def build_multipage_website_sync(
+    business: BusinessProfile,
+    layout: LayoutBlueprint,
+    language: str = "en",
+    images: Optional[Dict[str, str]] = None,
+    website_id: Optional[str] = None,
+    api_url: str = "https://api.laxizen.fun",
+    popup_config: Optional[Dict[str, Any]] = None
+) -> Dict[str, str]:
+    """
+    Synchronous version of build_multipage_website for Celery tasks.
+    """
+    import asyncio
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        # Use fallback images for sync version
+        if images is None:
+            from ..services.pexels_service import FALLBACK_IMAGES
+            fallback = FALLBACK_IMAGES.get(business.business_type, FALLBACK_IMAGES["General Business"])
+            images = {
+                "hero": fallback.get("hero", ""),
+                "about": fallback.get("about", ""),
+                "services": fallback.get("hero", ""),  # Reuse hero for services
+            }
+        
+        return loop.run_until_complete(
+            build_multipage_website(
+                business=business,
+                layout=layout,
+                language=language,
+                images=images,
+                website_id=website_id,
+                api_url=api_url,
+                popup_config=popup_config
+            )
+        )
+    finally:
+        loop.close()
+

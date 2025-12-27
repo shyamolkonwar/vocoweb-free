@@ -822,6 +822,201 @@ class SupabaseService:
         except Exception as e:
             print(f"Error updating rate limit: {e}")
             return False
+    
+    # ========================================
+    # LEADS METHODS
+    # ========================================
+    
+    async def get_website_public(self, website_id: str) -> Optional[Dict[str, Any]]:
+        """Get website by ID (public, no owner check)."""
+        if not self.is_configured():
+            return None
+        
+        response = self.client.table("websites")\
+            .select("id, status, subdomain, owner_id")\
+            .eq("id", website_id)\
+            .execute()
+        
+        if response.data and len(response.data) > 0:
+            return response.data[0]
+        return None
+    
+    async def create_lead(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Create a new lead from form submission."""
+        if not self.is_configured():
+            return None
+        
+        try:
+            response = self.client.table("leads").insert(data).execute()
+            
+            if response.data:
+                return response.data[0]
+            return None
+        except Exception as e:
+            print(f"Error creating lead: {e}")
+            return None
+    
+    async def get_user_leads(
+        self,
+        owner_id: str,
+        status: Optional[str] = None,
+        website_id: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0
+    ) -> List[Dict[str, Any]]:
+        """Get leads for all websites owned by user."""
+        if not self.is_configured():
+            return []
+        
+        # Build query with join to get website info
+        query = self.client.table("leads")\
+            .select("*, websites!inner(id, subdomain, business_json, owner_id)")\
+            .eq("websites.owner_id", owner_id)\
+            .order("created_at", desc=True)\
+            .limit(limit)\
+            .offset(offset)
+        
+        if status:
+            query = query.eq("status", status)
+        
+        if website_id:
+            query = query.eq("website_id", website_id)
+        
+        response = query.execute()
+        return response.data or []
+    
+    async def get_lead(self, lead_id: str, owner_id: str) -> Optional[Dict[str, Any]]:
+        """Get a specific lead (with owner verification via website)."""
+        if not self.is_configured():
+            return None
+        
+        response = self.client.table("leads")\
+            .select("*, websites!inner(owner_id)")\
+            .eq("id", lead_id)\
+            .eq("websites.owner_id", owner_id)\
+            .execute()
+        
+        if response.data and len(response.data) > 0:
+            return response.data[0]
+        return None
+    
+    async def update_lead_status(
+        self,
+        lead_id: str,
+        owner_id: str,
+        status: str
+    ) -> bool:
+        """Update lead status (with owner verification)."""
+        if not self.is_configured():
+            return False
+        
+        # First verify ownership
+        lead = await self.get_lead(lead_id, owner_id)
+        if not lead:
+            return False
+        
+        response = self.client.table("leads")\
+            .update({
+                "status": status,
+                "updated_at": datetime.utcnow().isoformat()
+            })\
+            .eq("id", lead_id)\
+            .execute()
+        
+        return len(response.data) > 0 if response.data else False
+    
+    async def delete_lead(self, lead_id: str, owner_id: str) -> bool:
+        """Delete a lead (with owner verification)."""
+        if not self.is_configured():
+            return False
+        
+        # First verify ownership
+        lead = await self.get_lead(lead_id, owner_id)
+        if not lead:
+            return False
+        
+        response = self.client.table("leads")\
+            .delete()\
+            .eq("id", lead_id)\
+            .execute()
+        
+        return len(response.data) > 0 if response.data else False
+    
+    async def get_lead_stats(self, owner_id: str) -> Dict[str, Any]:
+        """Get lead statistics for a user's websites."""
+        if not self.is_configured():
+            return {}
+        
+        try:
+            # Use RPC function if available, otherwise compute manually
+            response = self.client.rpc(
+                "get_lead_stats",
+                {"p_user_id": owner_id}
+            ).execute()
+            
+            if response.data and len(response.data) > 0:
+                return response.data[0]
+        except Exception as e:
+            print(f"Error calling get_lead_stats RPC: {e}")
+        
+        # Fallback: compute manually
+        leads = await self.get_user_leads(owner_id, limit=1000)
+        
+        total = len(leads)
+        new_leads = len([l for l in leads if l.get("status") == "new"])
+        contacted = len([l for l in leads if l.get("status") == "contacted"])
+        converted = len([l for l in leads if l.get("status") == "converted"])
+        
+        # Leads this week
+        from datetime import timedelta
+        week_ago = (datetime.utcnow() - timedelta(days=7)).isoformat()
+        this_week = len([l for l in leads if l.get("created_at", "") >= week_ago])
+        
+        return {
+            "total_leads": total,
+            "new_leads": new_leads,
+            "contacted_leads": contacted,
+            "converted_leads": converted,
+            "leads_this_week": this_week
+        }
+    
+    # ========================================
+    # POPUP SETTINGS METHODS
+    # ========================================
+    
+    async def get_popup_settings(self, website_id: str) -> Optional[Dict[str, Any]]:
+        """Get popup settings for a website."""
+        if not self.is_configured():
+            return None
+        
+        response = self.client.table("popup_settings")\
+            .select("*")\
+            .eq("website_id", website_id)\
+            .execute()
+        
+        if response.data and len(response.data) > 0:
+            return response.data[0]
+        return None
+    
+    async def upsert_popup_settings(
+        self,
+        website_id: str,
+        updates: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Create or update popup settings."""
+        if not self.is_configured():
+            return updates
+        
+        updates["website_id"] = website_id
+        updates["updated_at"] = datetime.utcnow().isoformat()
+        
+        response = self.client.table("popup_settings")\
+            .upsert(updates, on_conflict="website_id")\
+            .execute()
+        
+        if response.data:
+            return response.data[0]
+        return updates
 
 
 # Global instance

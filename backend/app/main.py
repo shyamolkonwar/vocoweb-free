@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-from app.api.routes import waitlist, generate, publish, sites, voice, edit, redesign, tasks, auth, usage, websites
+from app.api.routes import waitlist, generate, publish, sites, voice, edit, redesign, tasks, auth, usage, websites, leads
 from app.core.config import get_settings
 from app.core.rate_limiter import rate_limit_middleware
 
@@ -48,6 +48,7 @@ app.include_router(tasks.router, prefix="/api", tags=["Tasks"])
 app.include_router(auth.router, prefix="/api", tags=["Auth"])
 app.include_router(usage.router, prefix="/api", tags=["Usage"])
 app.include_router(websites.router, prefix="/api", tags=["Websites"])
+app.include_router(leads.router, prefix="/api", tags=["Leads"])
 
 
 @app.get("/")

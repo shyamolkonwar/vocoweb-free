@@ -59,14 +59,16 @@ class CloudflareService:
     
     def generate_subdomain(self, business_name: str) -> str:
         """
-        Generate a URL-friendly subdomain from business name.
+        Generate a URL-friendly subdomain from business name with unique suffix.
         
         Args:
             business_name: The business name to convert
         
         Returns:
-            Clean subdomain string
+            Clean subdomain string with unique suffix
         """
+        import uuid
+        
         # Convert to lowercase and replace spaces
         subdomain = business_name.lower()
         # Remove special characters
@@ -77,10 +79,14 @@ class CloudflareService:
         subdomain = re.sub(r'-+', '-', subdomain)
         # Trim hyphens from ends
         subdomain = subdomain.strip('-')
-        # Limit length
-        subdomain = subdomain[:30]
+        # Limit length to leave room for unique suffix
+        subdomain = subdomain[:24]
         
-        return subdomain or 'my-site'
+        # Add unique 4-character suffix to prevent duplicates
+        unique_suffix = uuid.uuid4().hex[:4]
+        subdomain = f"{subdomain}-{unique_suffix}" if subdomain else f"site-{unique_suffix}"
+        
+        return subdomain
     
     async def deploy_to_pages(
         self, 
@@ -245,6 +251,119 @@ class CloudflareService:
             
         except Exception as e:
             return {"status": "error", "message": str(e)}
+    
+    async def deploy_multipage_to_pages(
+        self, 
+        website_id: str, 
+        pages: dict,  # Dict[str, str] mapping filename to HTML content
+        subdomain: str,
+        user_id: Optional[str] = None
+    ) -> DeploymentResult:
+        """
+        Deploy a multi-page website to Cloudflare Pages.
+        
+        Args:
+            website_id: Unique website identifier
+            pages: Dict mapping filenames (e.g. 'index.html', 'about.html') to HTML content
+            subdomain: The subdomain for the site (used as branch name)
+            user_id: Owner user ID
+        
+        Returns:
+            DeploymentResult with deployment status and URL
+        """
+        import os
+        import tempfile
+        import asyncio
+        from app.core.config import get_settings
+        
+        settings = get_settings()
+        
+        if not self.is_configured():
+            local_url = f"http://localhost:8000/sites/{subdomain}"
+            return DeploymentResult(
+                success=True,
+                subdomain=subdomain,
+                live_url=local_url,
+                message="Deployed locally (Cloudflare not configured)",
+                ssl_status="n/a"
+            )
+        
+        # Create a temporary directory for all site files
+        with tempfile.TemporaryDirectory() as temp_dir:
+            try:
+                # Write all HTML files
+                for filename, content in pages.items():
+                    file_path = os.path.join(temp_dir, filename)
+                    with open(file_path, "w", encoding="utf-8") as f:
+                        f.write(content)
+                
+                print(f"Deploying multi-page site with files: {list(pages.keys())}")
+                
+                # Prepare environment for wrangler
+                env = os.environ.copy()
+                env["CLOUDFLARE_ACCOUNT_ID"] = self.account_id
+                env["CLOUDFLARE_API_TOKEN"] = self.api_token
+                
+                # Construct wrangler command
+                cmd = [
+                    "npx", "wrangler", "pages", "deploy", temp_dir,
+                    "--project-name", self.pages_project,
+                    "--branch", subdomain,
+                    "--commit-dirty=true"
+                ]
+                
+                print(f"Executing deployment: {' '.join(cmd)}")
+                
+                # Run wrangler
+                process = await asyncio.create_subprocess_exec(
+                    *cmd,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                    env=env,
+                    cwd=os.getcwd()
+                )
+                
+                stdout, stderr = await process.communicate()
+                
+                stdout_str = stdout.decode()
+                stderr_str = stderr.decode()
+                
+                print(f"Wrangler output: {stdout_str}")
+                if stderr_str:
+                    print(f"Wrangler stderr: {stderr_str}")
+                
+                if process.returncode == 0:
+                    project_subdomain = self.pages_project
+                    live_url = f"https://{subdomain}.{project_subdomain}.pages.dev"
+                    
+                    if self.base_domain and self.base_domain != "setu.local":
+                        live_url = f"https://{subdomain}.{self.base_domain}"
+                    
+                    deployment_id = f"cf-{subdomain}-{int(datetime.now().timestamp())}"
+                    
+                    return DeploymentResult(
+                        success=True,
+                        deployment_id=deployment_id,
+                        subdomain=subdomain,
+                        live_url=live_url,
+                        message=f"Multi-page website ({len(pages)} pages) deployed to Cloudflare Pages!",
+                        ssl_status="active"
+                    )
+                else:
+                    return DeploymentResult(
+                        success=False,
+                        subdomain=subdomain,
+                        live_url="",
+                        message=f"Wrangler failed: {stderr_str}"
+                    )
+                    
+            except Exception as e:
+                return DeploymentResult(
+                    success=False,
+                    subdomain=subdomain,
+                    live_url="",
+                    message=f"Deployment error: {str(e)}"
+                )
     
     async def close(self):
         """Close the HTTP client."""

@@ -1,0 +1,104 @@
+The Architecture
+Instead of letting the iframe navigate itself, we will intercept every click inside the iframe, send a signal to your React app, and have React swap the HTML content instantly.
+
+Step 1: The "Interceptor" Script (Backend Injection)
+You must inject a specific JavaScript snippet into the <head> of every HTML page your Python backend generates. This script kills normal link behavior and talks to your React frontend.
+
+In your Python Builder (builder.py), add this function:
+
+Python
+def inject_navigation_script(html_content):
+    script = """
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        // 1. Intercept all link clicks
+        document.body.addEventListener('click', (e) => {
+          const link = e.target.closest('a');
+          
+          // If it's a link and internal (not google.com)
+          if (link && link.getAttribute('href') && !link.getAttribute('href').startsWith('http')) {
+            e.preventDefault(); // STOP the browser from loading the page
+            
+            const targetPage = link.getAttribute('href');
+            
+            // 2. Send message to Parent (Next.js)
+            window.parent.postMessage({
+              type: 'NAVIGATE_PREVIEW',
+              payload: targetPage
+            }, '*');
+          }
+        });
+      });
+    </script>
+    """
+    return html_content.replace('</body>', f'{script}</body>')
+Now, when a user clicks "About Us", the iframe does nothing but shout: "Hey Parent, load about.html!"
+
+Step 2: The "Controller" Component (Frontend Next.js)
+Your React component needs to listen for that shout and update the iframe's content.
+
+Update your WebsitePreview.tsx:
+
+TypeScript
+"use client";
+import { useEffect, useState } from "react";
+
+// The full website object containing all pages
+type WebsiteData = {
+  pages: { [filename: string]: string }; // e.g. { "index.html": "<html>...", "contact.html": "<html>..." }
+  entryPoint: "index.html"
+};
+
+export default function WebsitePreview({ websiteData }: { websiteData: WebsiteData }) {
+  // State to track which HTML string is currently visible
+  const [currentPage, setCurrentPage] = useState("index.html");
+
+  useEffect(() => {
+    // 1. The Event Listener
+    const handleMessage = (event: MessageEvent) => {
+      // Security: Ensure message is from your iframe (optional but good)
+      
+      if (event.data?.type === 'NAVIGATE_PREVIEW') {
+        const targetPath = event.data.payload; // e.g., "contact.html" or "services"
+        
+        // Normalize the path (handle "services" vs "services.html")
+        const cleanPath = targetPath.endsWith('.html') ? targetPath : `${targetPath}.html`;
+        
+        // 2. Check if page exists in our data
+        if (websiteData.pages[cleanPath]) {
+          setCurrentPage(cleanPath);
+        } else {
+          console.warn("Page not found in draft:", cleanPath);
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [websiteData]);
+
+  return (
+    <div className="w-full h-full bg-gray-900 flex justify-center items-center p-4">
+       <iframe
+          // 3. Render the CURRENT page string
+          srcDoc={websiteData.pages[currentPage]}
+          
+          className="w-full h-full bg-white shadow-2xl rounded-lg"
+          
+          // 4. CRITICAL SECURITY LOCKDOWN
+          // allow-scripts: Lets our interceptor run
+          // allow-same-origin: NO! (Keep it strictly sandboxed if possible, or add if JS needs cookies)
+          // NO allow-top-navigation: Physically prevents redirecting your dashboard
+          sandbox="allow-scripts"
+          
+          title="Website Preview"
+        />
+    </div>
+  );
+}
+Step 3: Sanitize Your Links (AI Instruction)
+You must ensure your GPT/AI generates links correctly in the HTML.
+BAD: <a href="https://laxizen.fun/contact"> (This will break out).
+BAD: <a href="/contact"> (This tries to resolve to localhost:3000/contact).
+GOOD: <a href="contact.html"> (Relative).
+Action: Update your layout_selector.py or AI prompt to enforce: “All internal links must be relative filenames ending in .html (e.g., about.html, services.html).”

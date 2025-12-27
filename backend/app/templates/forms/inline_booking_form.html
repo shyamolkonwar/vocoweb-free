@@ -1,0 +1,219 @@
+<!-- Inline Booking/Contact Form -->
+<!-- Modern embedded form with floating labels and micro-interactions -->
+<!-- Variables: form_headline, form_subheadline, primary_color, accent_color, website_id, api_url, services, cta -->
+
+<div class="inline-form-container bg-white rounded-3xl p-8 shadow-xl relative overflow-hidden" data-aos="fade-up">
+    <!-- Decorative elements -->
+    <div class="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-20" style="background: {{ primary_color }};">
+    </div>
+    <div class="absolute -bottom-10 -left-10 w-24 h-24 rounded-full opacity-15" style="background: {{ accent_color }};">
+    </div>
+
+    <!-- Header -->
+    <div class="relative mb-8 text-center">
+        <span class="inline-block px-4 py-2 rounded-full text-sm font-semibold mb-4"
+            style="background: {{ primary_color }}15; color: {{ primary_color }};">
+            {{ labels.get_in_touch | default("Get In Touch") }}
+        </span>
+        <h3 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+            {{ form_headline | default("Book an Appointment") }}
+        </h3>
+        <p class="text-gray-600">
+            {{ form_subheadline | default("Fill in your details and we'll get back to you.") }}
+        </p>
+    </div>
+
+    <!-- Form -->
+    <form id="inline-lead-form" onsubmit="submitInlineForm(event)" class="relative space-y-5">
+        <input type="hidden" name="website_id" value="{{ website_id }}">
+        <input type="hidden" name="source_page" value="{{ current_page | default('contact') }}">
+
+        <div class="grid sm:grid-cols-2 gap-5">
+            <!-- Name -->
+            <div class="relative group">
+                <input type="text" name="customer_name" id="inline-name" required
+                    class="peer w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:outline-none transition-all duration-300 bg-gray-50 focus:bg-white"
+                    style="--focus-color: {{ primary_color }};" placeholder=" "
+                    onfocus="this.parentElement.classList.add('focused')"
+                    onblur="this.parentElement.classList.remove('focused')">
+                <label for="inline-name"
+                    class="absolute left-4 top-4 text-gray-400 transition-all duration-300 pointer-events-none peer-focus:-top-2.5 peer-focus:left-3 peer-focus:text-xs peer-focus:px-1 peer-focus:bg-white peer-[:not(:placeholder-shown)]:-top-2.5 peer-[:not(:placeholder-shown)]:left-3 peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:px-1 peer-[:not(:placeholder-shown)]:bg-white">
+                    {{ labels.full_name | default("Full Name") }} *
+                </label>
+                <div class="absolute bottom-0 left-0 h-0.5 w-0 group-[.focused]:w-full transition-all duration-300"
+                    style="background: {{ primary_color }};"></div>
+            </div>
+
+            <!-- Phone -->
+            <div class="relative group">
+                <input type="tel" name="customer_phone" id="inline-phone" required
+                    class="peer w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:outline-none transition-all duration-300 bg-gray-50 focus:bg-white"
+                    placeholder=" " onfocus="this.parentElement.classList.add('focused')"
+                    onblur="this.parentElement.classList.remove('focused')">
+                <label for="inline-phone"
+                    class="absolute left-4 top-4 text-gray-400 transition-all duration-300 pointer-events-none peer-focus:-top-2.5 peer-focus:left-3 peer-focus:text-xs peer-focus:px-1 peer-focus:bg-white peer-[:not(:placeholder-shown)]:-top-2.5 peer-[:not(:placeholder-shown)]:left-3 peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:px-1 peer-[:not(:placeholder-shown)]:bg-white">
+                    {{ labels.phone_number | default("Phone Number") }} *
+                </label>
+                <div class="absolute bottom-0 left-0 h-0.5 w-0 group-[.focused]:w-full transition-all duration-300"
+                    style="background: {{ primary_color }};"></div>
+            </div>
+        </div>
+
+        <!-- Email (Optional) -->
+        <div class="relative group">
+            <input type="email" name="customer_email" id="inline-email"
+                class="peer w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:outline-none transition-all duration-300 bg-gray-50 focus:bg-white"
+                placeholder=" " onfocus="this.parentElement.classList.add('focused')"
+                onblur="this.parentElement.classList.remove('focused')">
+            <label for="inline-email"
+                class="absolute left-4 top-4 text-gray-400 transition-all duration-300 pointer-events-none peer-focus:-top-2.5 peer-focus:left-3 peer-focus:text-xs peer-focus:px-1 peer-focus:bg-white peer-[:not(:placeholder-shown)]:-top-2.5 peer-[:not(:placeholder-shown)]:left-3 peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:px-1 peer-[:not(:placeholder-shown)]:bg-white">
+                {{ labels.email | default("Email Address") }} ({{ labels.optional | default("Optional") }})
+            </label>
+            <div class="absolute bottom-0 left-0 h-0.5 w-0 group-[.focused]:w-full transition-all duration-300"
+                style="background: {{ primary_color }};"></div>
+        </div>
+
+        <!-- Service Selection -->
+        {% if services %}
+        <div class="relative">
+            <select name="service_interested" id="inline-service"
+                class="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:outline-none transition-all duration-300 bg-gray-50 focus:bg-white appearance-none cursor-pointer">
+                <option value="">{{ labels.select_service | default("Select a Service") }}</option>
+                {% for service in services %}
+                <option value="{{ service }}">{{ service }}</option>
+                {% endfor %}
+            </select>
+            <svg class="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none"
+                stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+        </div>
+        {% endif %}
+
+        <!-- Message -->
+        <div class="relative group">
+            <textarea name="message" id="inline-message" rows="4"
+                class="peer w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:outline-none transition-all duration-300 bg-gray-50 focus:bg-white resize-none"
+                placeholder=" " onfocus="this.parentElement.classList.add('focused')"
+                onblur="this.parentElement.classList.remove('focused')"></textarea>
+            <label for="inline-message"
+                class="absolute left-4 top-4 text-gray-400 transition-all duration-300 pointer-events-none peer-focus:-top-2.5 peer-focus:left-3 peer-focus:text-xs peer-focus:px-1 peer-focus:bg-white peer-[:not(:placeholder-shown)]:-top-2.5 peer-[:not(:placeholder-shown)]:left-3 peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:px-1 peer-[:not(:placeholder-shown)]:bg-white">
+                {{ labels.message | default("Your Message") }}
+            </label>
+            <div class="absolute bottom-0 left-0 h-0.5 w-0 group-[.focused]:w-full transition-all duration-300"
+                style="background: {{ primary_color }};"></div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" id="inline-submit-btn"
+            class="w-full py-4 rounded-xl text-white font-bold text-lg transition-all duration-300 transform hover:scale-[1.02] hover:-translate-y-1 shadow-lg relative overflow-hidden group"
+            style="background: linear-gradient(135deg, {{ primary_color }} 0%, {{ accent_color }} 100%); box-shadow: 0 4px 20px {{ primary_color }}40;">
+            <span class="relative z-10 flex items-center justify-center gap-2" id="inline-btn-content">
+                {{ cta | default("Send Message") }}
+                <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+            </span>
+            <span class="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+        </button>
+
+        <!-- Privacy Note -->
+        <p class="text-center text-xs text-gray-400">
+            🔒 {{ labels.privacy_note | default("We respect your privacy and will never share your information.") }}
+        </p>
+    </form>
+
+    <!-- Success State -->
+    <div id="inline-success" class="hidden text-center py-12">
+        <div class="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center animate-bounce"
+            style="background: {{ primary_color }}15;">
+            <svg class="w-10 h-10" style="color: {{ primary_color }};" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+        </div>
+        <h4 class="text-2xl font-bold text-gray-900 mb-3">{{ labels.message_sent | default("Message Sent!") }}</h4>
+        <p class="text-gray-600">{{ labels.we_will_respond | default("Thank you! We'll respond within 24 hours.") }}</p>
+    </div>
+</div>
+
+<script>
+    const INLINE_API_URL = '{{ api_url | default("https://api.laxizen.fun") }}';
+
+    async function submitInlineForm(event) {
+        event.preventDefault();
+        const form = event.target;
+        const btn = document.getElementById('inline-submit-btn');
+        const btnContent = document.getElementById('inline-btn-content');
+        const successDiv = document.getElementById('inline-success');
+
+        // Show loading
+        btnContent.innerHTML = `
+        <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        {{ labels.sending | default("Sending...") }}
+    `;
+        btn.disabled = true;
+
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+            const response = await fetch(INLINE_API_URL + '/api/leads/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                // Show success
+                form.classList.add('hidden');
+                successDiv.classList.remove('hidden');
+            } else {
+                throw new Error('Submission failed');
+            }
+        } catch (error) {
+            console.error('Lead form error:', error);
+            btnContent.innerHTML = `{{ labels.try_again | default("Try Again") }}`;
+            btn.disabled = false;
+        }
+    }
+</script>
+
+<style>
+    /* Focus ring animation */
+    .inline-form-container input:focus,
+    .inline-form-container textarea:focus,
+    .inline-form-container select:focus {
+        border-color: {
+                {
+                primary_color
+            }
+        }
+
+        ;
+
+        box-shadow: 0 0 0 3px {
+                {
+                primary_color
+            }
+        }
+
+        20;
+    }
+
+    /* Label color on focus */
+    .inline-form-container .group.focused label {
+        color: {
+                {
+                primary_color
+            }
+        }
+
+        ;
+    }
+</style>

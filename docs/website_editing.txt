@@ -1,0 +1,182 @@
+
+
+# 📘 Laxizen Visual Editor Documentation
+
+## 1. Executive Summary
+
+The Visual Editor is a dedicated environment where users refine their generated websites.
+
+* **Philosophy:** "What You See Is What You Edit" (WYSIWYG).
+* **Core Mechanism:** An **Iframe Bridge** connects the user's website (inside an iframe) to the Laxizen application (the control panel).
+* **Cross-Platform:** Uses a **Sidebar** on Desktop and a **Bottom Sheet** on Mobile.
+
+---
+
+## 2. User Flow & Navigation
+
+### From "Generation" to "Editing"
+
+We treat "Editing" as a separate mode to keep the interface clean.
+
+1. **Trigger:** User clicks the **"Edit"** button (Pencil Icon) on the Generation/Preview page.
+2. **Action:** The app navigates to a dedicated route: `/editor/[website_id]`.
+* *Why a new route?* It gives us a fresh canvas without the distraction of "Regenerate" or "Language" toggles. It allows for a focused "Work Mode."
+
+
+3. **Loading:** The Editor loads the latest draft of the website into the secure iframe.
+
+---
+
+## 3. The "Iframe Bridge" Architecture
+
+Since the user's website is just an HTML string inside an iframe, your React application cannot "touch" it directly. We must create a communication bridge.
+
+### A. The "Editor Agent" (The Spy Script)
+
+We inject a lightweight JavaScript "Agent" into the website HTML before rendering it in the editor.
+
+**Responsibilities of the Agent:**
+
+1. **Tagging:** On load, it finds all editable elements (Headings, Paragraphs, Images, Buttons) and adds a visual marker (e.g., a blue dotted border on hover).
+2. **Interception:** It blocks all clicks (e.g., clicking a "Contact" button stops navigation).
+3. **Reporting:** When an element is clicked, it sends a message to the Parent App: *"User clicked the Hero Headline!"*
+4. **Updating:** It listens for commands from the Parent App: *"Change the headline text to 'Welcome'."*
+
+### B. The Communication Protocol (`postMessage`)
+
+**1. Child (Iframe) → Parent (Next.js)**
+
+* `ELEMENT_SELECTED`: Sent when user clicks an item.
+* Payload: `{ type: "text", currentContent: "Dental Care", id: "unique_id_123" }`
+
+
+* `ELEMENT_HOVER`: Sent to show a "hover label" in the parent UI (optional).
+
+**2. Parent (Next.js) → Child (Iframe)**
+
+* `UPDATE_CONTENT`: Sent when user types in the editor sidebar.
+* Payload: `{ id: "unique_id_123", newContent: "Best Dental Care" }`
+
+
+* `UPDATE_STYLE`: Sent to change colors or fonts.
+
+---
+
+## 4. Interface Design (Responsive Strategy)
+
+### A. Desktop Experience (The "Inspector" Panel)
+
+* **Layout:**
+* **Left (75%):** The Website Canvas (Iframe).
+* **Right (25%):** The Properties Sidebar (Fixed).
+
+
+* **Interaction:**
+1. User clicks the big "Your Smile, Our Priority" text.
+2. The **Right Sidebar** instantly activates.
+3. **Content Tab:** Shows a text box with "Your Smile, Our Priority". User types here.
+4. **Style Tab:** Shows Color Picker and Font Size slider.
+5. As the user types in the sidebar, the text updates *instantly* on the canvas.
+
+
+
+### B. Mobile Experience (The "Drawer" Sheet)
+
+* **Layout:**
+* **Full Screen:** The Website Canvas takes up 100% height.
+* **Hidden:** The Editor controls are hidden until a click occurs.
+
+
+* **Interaction:**
+1. User taps the Headline on their phone screen.
+2. A **Bottom Sheet** slides up (covering the bottom 40% of the screen).
+3. **Focus:** The text input in the sheet is automatically focused. Keyboard opens.
+4. **Live Preview:** As they type, they see the change in the top 60% of the screen.
+5. **Done:** User taps "Done" or swipes down to close the sheet.
+
+
+
+---
+
+## 5. Editing Logic for Different Elements
+
+We need different "Editors" depending on what the user clicked.
+
+### 1. Text Editor (Headings, Paragraphs)
+
+* **Inputs:**
+* **Text Area:** For changing the content.
+* **AI Rewrite Button:** A small "Magic Wand" icon next to the text box. Clicking it calls GPT-3.5 to "Make it punchier" or "Translate to Hindi."
+
+
+
+### 2. Image Editor (Hero Images, Service Icons)
+
+* **Inputs:**
+* **Upload Button:** "Choose from Device."
+* **Stock Search:** "Search Pexels" (integrated directly in the sidebar).
+* **Prompt Gen:** "Generate with AI" (calls Nano Banana).
+
+
+* **Action:** Selecting a new image updates the `src` attribute of the `<img>` tag in the iframe immediately.
+
+### 3. Button/Link Editor
+
+* **Inputs:**
+* **Label:** Change "Book Now" to "Call Us".
+* **Action:** Dropdown menu: `[ Go to Page | Call Phone | Scroll to Section ]`.
+* **Destination:** `tel:+9199999...` or `#contact`.
+
+
+
+---
+
+## 6. Implementation Plan (Step-by-Step)
+
+### Step 1: The Injection Logic (Backend)
+
+Modify `builder.py` to add unique IDs to elements. This makes targeting them easier.
+
+* *Logic:* Iterate through the HTML soup. Add `data-lid="element-1"`, `data-lid="element-2"` to every generic tag. This serves as the "Address" for that element.
+
+### Step 2: The Agent Script (Frontend Asset)
+
+Create `public/scripts/editor-agent.js`.
+
+* Add an event listener for `click`.
+* `e.preventDefault()` (Stop links).
+* `e.stopPropagation()` (Stop bubbling).
+* Identify the target element.
+* `window.parent.postMessage(...)`.
+
+### Step 3: The Editor Page (Next.js)
+
+Create `src/app/editor/[id]/page.tsx`.
+
+* **State:** `selectedElement` (null | object).
+* **Render:**
+* `<iframe srcDoc={htmlWithAgent} />`
+* `<EditorSidebar selectedElement={selectedElement} />` (Hidden on mobile).
+* `<EditorBottomSheet selectedElement={selectedElement} />` (Hidden on desktop).
+
+
+
+### Step 4: The Save Mechanism
+
+* **Auto-Save:** Do not save to the database on every keypress. It will crash the server.
+* **Debounce:** Wait 2 seconds after the user stops typing.
+* **Extraction:** When saving, the Parent App asks the Agent: *"Send me the full HTML of the page right now."*
+* The Agent serializes the current DOM (with the user's edits) and sends it back.
+* The Parent sends this clean HTML string to the Supabase `websites` table.
+
+
+
+---
+
+## 7. Performance Guardrails (No Lag)
+
+1. **Local Updates First:** When a user types, update the iframe DOM via JavaScript immediately. Do NOT wait for a server round-trip. This ensures zero lag.
+2. **Highlight Optimizations:** Use CSS `outline` for highlighting selected elements instead of adding new DOM nodes (borders). It renders faster.
+3. **Asset Caching:** Ensure the Pexels/User images are cached so swapping images feels instant.
+
+This architecture provides a "Wix-like" experience that is robust enough for desktops but simple enough for mobile phones, fulfilling your requirement for a responsive, non-technical editor.

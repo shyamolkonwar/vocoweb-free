@@ -1,0 +1,230 @@
+<!-- Lead Capture Modal Popup -->
+<!-- Glassmorphism popup with exit intent or time trigger -->
+<!-- Variables: popup_headline, popup_subheadline, offer_text, primary_color, accent_color, website_id, api_url -->
+
+<div id="lead-popup" class="fixed inset-0 z-[9999] hidden items-center justify-center p-4">
+    <!-- Overlay -->
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeLeadPopup()"></div>
+
+    <!-- Modal -->
+    <div class="relative w-full max-w-md transform transition-all duration-500 scale-95 opacity-0" id="popup-content">
+        <!-- Glass Card -->
+        <div class="relative overflow-hidden rounded-3xl shadow-2xl"
+            style="background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%); backdrop-filter: blur(20px);">
+            <!-- Decorative gradient -->
+            <div class="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-30"
+                style="background: {{ primary_color }};"></div>
+            <div class="absolute -bottom-20 -left-20 w-40 h-40 rounded-full opacity-20"
+                style="background: {{ accent_color }};"></div>
+
+            <!-- Close button -->
+            <button onclick="closeLeadPopup()"
+                class="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors z-10">
+                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <!-- Content -->
+            <div class="relative p-8 pt-6">
+                <!-- Offer Badge -->
+                {% if offer_text %}
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4"
+                    style="background: {{ primary_color }}15;">
+                    <span class="w-2 h-2 rounded-full animate-pulse" style="background: {{ primary_color }};"></span>
+                    <span class="text-sm font-semibold" style="color: {{ primary_color }};">{{ offer_text }}</span>
+                </div>
+                {% endif %}
+
+                <!-- Headline -->
+                <h3 class="text-2xl font-bold text-gray-900 mb-2">
+                    {{ popup_headline | default("Get a Free Quote!") }}
+                </h3>
+                <p class="text-gray-600 mb-6">
+                    {{ popup_subheadline | default("Fill in your details and we'll get back to you shortly.") }}
+                </p>
+
+                <!-- Form -->
+                <form id="lead-form-popup" onsubmit="submitLeadForm(event, 'popup')" class="space-y-4">
+                    <input type="hidden" name="website_id" value="{{ website_id }}">
+                    <input type="hidden" name="source_page" value="popup">
+
+                    <!-- Name -->
+                    <div class="relative">
+                        <input type="text" name="customer_name" required
+                            class="peer w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-{{ primary_color }} focus:outline-none transition-colors bg-white/80"
+                            placeholder=" ">
+                        <label
+                            class="absolute left-4 top-3 text-gray-400 transition-all peer-focus:-top-2 peer-focus:text-xs peer-focus:bg-white peer-focus:px-1 peer-[:not(:placeholder-shown)]:-top-2 peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:bg-white peer-[:not(:placeholder-shown)]:px-1"
+                            style="color: {{ primary_color }};">
+                            {{ labels.name | default("Your Name") }} *
+                        </label>
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="relative">
+                        <input type="tel" name="customer_phone" required
+                            class="peer w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none transition-colors bg-white/80"
+                            style="focus:border-color: {{ primary_color }};" placeholder=" ">
+                        <label
+                            class="absolute left-4 top-3 text-gray-400 transition-all peer-focus:-top-2 peer-focus:text-xs peer-focus:bg-white peer-focus:px-1 peer-[:not(:placeholder-shown)]:-top-2 peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:bg-white peer-[:not(:placeholder-shown)]:px-1">
+                            {{ labels.phone | default("Phone Number") }} *
+                        </label>
+                    </div>
+
+                    <!-- Service (Optional) -->
+                    <div class="relative">
+                        <select name="service_interested"
+                            class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none transition-colors bg-white/80 appearance-none">
+                            <option value="">{{ labels.select_service | default("Select a Service (Optional)") }}
+                            </option>
+                            {% for service in services %}
+                            <option value="{{ service }}">{{ service }}</option>
+                            {% endfor %}
+                        </select>
+                        <svg class="absolute right-4 top-4 w-4 h-4 text-gray-400 pointer-events-none" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit"
+                        class="w-full py-4 rounded-xl text-white font-bold text-lg transition-all duration-300 transform hover:scale-[1.02] shadow-lg relative overflow-hidden group"
+                        style="background: linear-gradient(135deg, {{ primary_color }} 0%, {{ accent_color }} 100%); box-shadow: 0 4px 20px {{ primary_color }}40;">
+                        <span class="relative z-10" id="popup-btn-text">{{ cta | default("Get My Free Quote") }}</span>
+                        <span
+                            class="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    </button>
+                </form>
+
+                <!-- Success Message (Hidden) -->
+                <div id="popup-success" class="hidden text-center py-8">
+                    <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
+                        style="background: {{ primary_color }}15;">
+                        <svg class="w-8 h-8" style="color: {{ primary_color }};" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+                    <h4 class="text-xl font-bold text-gray-900 mb-2">{{ labels.thank_you | default("Thank You!") }}</h4>
+                    <p class="text-gray-600">{{ labels.we_will_contact | default("We'll contact you shortly.") }}</p>
+                </div>
+
+                <!-- Trust Badge -->
+                <p class="text-center text-xs text-gray-400 mt-4">
+                    🔒 {{ labels.privacy | default("Your information is secure and never shared.") }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Popup trigger configuration
+    const POPUP_TRIGGER = '{{ popup_trigger | default("time") }}'; // 'time', 'exit', 'scroll'
+    const POPUP_DELAY = {{ popup_delay | default (5) }} * 1000; // seconds to ms
+    const POPUP_SCROLL_PERCENT = {{ popup_scroll_percent | default (50) }};
+    const API_URL = '{{ api_url | default("https://api.laxizen.fun") }}';
+
+    let popupShown = false;
+
+    function showLeadPopup() {
+        if (popupShown || localStorage.getItem('leadPopupDismissed')) return;
+        popupShown = true;
+
+        const popup = document.getElementById('lead-popup');
+        const content = document.getElementById('popup-content');
+
+        popup.classList.remove('hidden');
+        popup.classList.add('flex');
+
+        // Animate in
+        setTimeout(() => {
+            content.classList.remove('scale-95', 'opacity-0');
+            content.classList.add('scale-100', 'opacity-100');
+        }, 50);
+    }
+
+    function closeLeadPopup() {
+        const popup = document.getElementById('lead-popup');
+        const content = document.getElementById('popup-content');
+
+        content.classList.remove('scale-100', 'opacity-100');
+        content.classList.add('scale-95', 'opacity-0');
+
+        setTimeout(() => {
+            popup.classList.add('hidden');
+            popup.classList.remove('flex');
+        }, 300);
+
+        // Remember dismissal for this session
+        localStorage.setItem('leadPopupDismissed', 'true');
+    }
+
+    async function submitLeadForm(event, source) {
+        event.preventDefault();
+        const form = event.target;
+        const btn = form.querySelector('button[type="submit"]');
+        const btnText = document.getElementById(source + '-btn-text');
+        const successDiv = document.getElementById(source + '-success');
+
+        // Show loading
+        btnText.textContent = '{{ labels.sending | default("Sending...") }}';
+        btn.disabled = true;
+
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+            const response = await fetch(API_URL + '/api/leads/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                // Show success
+                form.classList.add('hidden');
+                successDiv.classList.remove('hidden');
+
+                // Close after 3 seconds
+                setTimeout(closeLeadPopup, 3000);
+            } else {
+                throw new Error('Submission failed');
+            }
+        } catch (error) {
+            console.error('Lead form error:', error);
+            btnText.textContent = '{{ labels.try_again | default("Try Again") }}';
+            btn.disabled = false;
+        }
+    }
+
+    // Initialize triggers
+    document.addEventListener('DOMContentLoaded', function () {
+        // Time-based trigger
+        if (POPUP_TRIGGER === 'time') {
+            setTimeout(showLeadPopup, POPUP_DELAY);
+        }
+
+        // Exit intent trigger
+        if (POPUP_TRIGGER === 'exit') {
+            document.addEventListener('mouseout', function (e) {
+                if (e.clientY < 0) showLeadPopup();
+            });
+        }
+
+        // Scroll trigger
+        if (POPUP_TRIGGER === 'scroll') {
+            window.addEventListener('scroll', function () {
+                const scrollPercent = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
+                if (scrollPercent >= POPUP_SCROLL_PERCENT) showLeadPopup();
+            });
+        }
+    });
+
+    // Close on escape key
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeLeadPopup();
+    });
+</script>

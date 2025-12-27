@@ -61,3 +61,45 @@ export async function PATCH(
         );
     }
 }
+
+// PUT - Save full HTML from visual editor
+export async function PUT(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
+        const body = await request.json();
+        const { html, page } = body;
+
+        if (!html) {
+            return NextResponse.json(
+                { error: 'HTML content is required' },
+                { status: 400 }
+            );
+        }
+
+        const response = await fetch(`${BACKEND_URL}/api/edit/${id}/html`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ html, page: page || 'index.html' })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            return NextResponse.json(data, { status: 200 });
+        } else {
+            return NextResponse.json(
+                { error: data.detail || 'Failed to save HTML' },
+                { status: response.status }
+            );
+        }
+    } catch (error) {
+        console.error('Save HTML error:', error);
+        return NextResponse.json(
+            { error: 'Failed to save HTML' },
+            { status: 500 }
+        );
+    }
+}

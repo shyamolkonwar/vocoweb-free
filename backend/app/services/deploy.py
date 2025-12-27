@@ -42,14 +42,16 @@ def ensure_dirs():
 
 def generate_subdomain(business_name: str) -> str:
     """
-    Generate a URL-friendly subdomain from business name.
+    Generate a URL-friendly subdomain from business name with unique suffix.
     
     Args:
         business_name: The business name to convert
     
     Returns:
-        Clean subdomain string
+        Clean subdomain string with unique suffix
     """
+    import uuid
+    
     # Convert to lowercase and replace spaces
     subdomain = business_name.lower()
     # Remove special characters
@@ -60,10 +62,14 @@ def generate_subdomain(business_name: str) -> str:
     subdomain = re.sub(r'-+', '-', subdomain)
     # Trim hyphens from ends
     subdomain = subdomain.strip('-')
-    # Limit length
-    subdomain = subdomain[:30]
+    # Limit length to leave room for unique suffix
+    subdomain = subdomain[:24]
     
-    return subdomain or 'my-site'
+    # Add unique 4-character suffix to prevent duplicates
+    unique_suffix = uuid.uuid4().hex[:4]
+    subdomain = f"{subdomain}-{unique_suffix}" if subdomain else f"site-{unique_suffix}"
+    
+    return subdomain
 
 
 def load_published_sites() -> dict:
@@ -367,4 +373,144 @@ async def republish_website(
     save_published_sites(sites)
     
     return PublishedSite(**site)
+
+
+# ============================================
+# MULTI-PAGE PUBLISHING (v2.0)
+# ============================================
+
+async def publish_multipage_website_cloudflare(
+    website_id: str,
+    pages: dict,  # Dict[str, str] filename -> HTML
+    business_name: str,
+    user_id: Optional[str] = None
+) -> PublishedSite:
+    """
+    Publish a multi-page website to Cloudflare Pages.
+    
+    Args:
+        website_id: Unique website identifier
+        pages: Dict mapping filenames to HTML content
+        business_name: Business name for subdomain generation
+        user_id: Owner user ID
+    
+    Returns:
+        PublishedSite with URL and metadata
+    """
+    from app.services.cloudflare_service import cloudflare_service
+    
+    settings = get_settings()
+    subdomain = generate_subdomain(business_name)
+    
+    # Make subdomain unique
+    sites = load_published_sites()
+    original_subdomain = subdomain
+    counter = 1
+    while any(s.get('subdomain') == subdomain for s in sites.values() if s.get('id') != website_id):
+        subdomain = f"{original_subdomain}-{counter}"
+        counter += 1
+    
+    # In production mode, MUST use Cloudflare
+    if settings.is_production:
+        if not cloudflare_service.is_configured():
+            raise Exception("Production mode requires Cloudflare configuration.")
+        
+        result = await cloudflare_service.deploy_multipage_to_pages(
+            website_id=website_id,
+            pages=pages,
+            subdomain=subdomain,
+            user_id=user_id
+        )
+        
+        if not result.success:
+            raise Exception(f"Cloudflare deployment failed: {result.message}")
+        
+        published = PublishedSite(
+            id=website_id,
+            subdomain=result.subdomain,
+            url=result.live_url,
+            published_at=datetime.now().isoformat(),
+            deployment_id=result.deployment_id,
+            ssl_status=result.ssl_status
+        )
+        
+        sites[website_id] = published.model_dump()
+        save_published_sites(sites)
+        
+        return published
+    
+    # Development mode: try Cloudflare, fallback to local
+    if cloudflare_service.is_configured():
+        result = await cloudflare_service.deploy_multipage_to_pages(
+            website_id=website_id,
+            pages=pages,
+            subdomain=subdomain,
+            user_id=user_id
+        )
+        
+        if result.success:
+            published = PublishedSite(
+                id=website_id,
+                subdomain=result.subdomain,
+                url=result.live_url,
+                published_at=datetime.now().isoformat(),
+                deployment_id=result.deployment_id,
+                ssl_status=result.ssl_status
+            )
+            
+            sites[website_id] = published.model_dump()
+            save_published_sites(sites)
+            
+            return published
+        else:
+            print(f"Cloudflare failed, falling back to local: {result.message}")
+    
+    # Local fallback
+    return publish_multipage_website_local(website_id, pages, subdomain)
+
+
+def publish_multipage_website_local(
+    website_id: str,
+    pages: dict,
+    subdomain: str
+) -> PublishedSite:
+    """
+    Publish a multi-page website to local storage (development fallback).
+    
+    Args:
+        website_id: Unique website identifier
+        pages: Dict mapping filenames to HTML content
+        subdomain: Pre-generated subdomain
+    
+    Returns:
+        PublishedSite with local URL
+    """
+    ensure_dirs()
+    
+    # Create site directory
+    site_dir = PUBLISHED_DIR / subdomain
+    site_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Write all HTML files
+    for filename, content in pages.items():
+        html_path = site_dir / filename
+        html_path.write_text(content)
+    
+    api_url = f"http://localhost:8000/sites/{subdomain}"
+    
+    published = PublishedSite(
+        id=website_id,
+        subdomain=subdomain,
+        url=api_url,
+        published_at=datetime.now().isoformat(),
+        html_path=str(site_dir / "index.html"),
+        ssl_status="n/a"
+    )
+    
+    sites = load_published_sites()
+    sites[website_id] = published.model_dump()
+    save_published_sites(sites)
+    
+    return published
+
 

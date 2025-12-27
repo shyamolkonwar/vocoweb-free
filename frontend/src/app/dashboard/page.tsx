@@ -1,11 +1,8 @@
-
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 
-import DashboardClientWrapper from './components/DashboardClientWrapper';
-import DashboardHeader from './components/DashboardHeader';
 import { CreditCard, WebsitesCountCard } from './components/StatsCards';
 import { WebsiteList } from './components/WebsiteList';
 import { CardSkeleton, WebsiteListSkeleton } from './components/Skeletons';
@@ -15,7 +12,6 @@ export const metadata = {
 };
 
 export default async function DashboardPage() {
-    // Server-side auth check
     const supabase = await createClient();
     const { data: { session } } = await supabase.auth.getSession();
 
@@ -24,33 +20,54 @@ export default async function DashboardPage() {
     }
 
     return (
-        <DashboardClientWrapper>
-            <div className="dashboard-container">
-                <DashboardHeader />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Stats Cards - Responsive grid */}
+            <div
+                className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6"
+            >
+                <Suspense fallback={<CardSkeleton />}>
+                    <WebsitesCountCard />
+                </Suspense>
 
-                {/* Stats Cards - Parallel Fetching */}
-                <div className="dashboard-cards">
-                    <Suspense fallback={<CardSkeleton />}>
-                        <WebsitesCountCard />
-                    </Suspense>
+                <Suspense fallback={<CardSkeleton />}>
+                    <CreditCard />
+                </Suspense>
+            </div>
 
-                    <Suspense fallback={<CardSkeleton />}>
-                        <CreditCard />
-                    </Suspense>
-                </div>
+            {/* Main Action */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Link
+                    href="/create"
+                    style={{
+                        backgroundColor: '#0d9488',
+                        color: 'white',
+                        padding: '12px 20px',
+                        borderRadius: '8px',
+                        fontWeight: 500,
+                        textDecoration: 'none',
+                        fontSize: '14px',
+                        transition: 'background 0.15s ease',
+                        minHeight: '44px',
+                        display: 'flex',
+                        alignItems: 'center'
+                    }}
+                >
+                    Create New Website
+                </Link>
+            </div>
 
-                {/* Main Action */}
-                <div className="dashboard-cta">
-                    <Link href="/create" className="btn-primary btn-large">
-                        Create New Website
-                    </Link>
-                </div>
-
-                {/* Websites List - Parallel Fetching */}
+            {/* Websites List */}
+            <div>
+                <h2 style={{
+                    fontSize: '18px',
+                    fontWeight: 600,
+                    color: '#1e293b',
+                    marginBottom: '16px'
+                }}>My Websites</h2>
                 <Suspense fallback={<WebsiteListSkeleton />}>
                     <WebsiteList />
                 </Suspense>
             </div>
-        </DashboardClientWrapper>
+        </div>
     );
 }
