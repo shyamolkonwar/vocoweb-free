@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     cors_origins: list[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "https://vocoweb.in",
+        "https://*.vocoweb.in",
     ]
     
     # Rate limiting
@@ -65,7 +67,7 @@ class Settings(BaseSettings):
     cloudflare_r2_endpoint: str = ""
     
     # Base domain for published sites
-    base_domain: str = "setu.local"
+    base_domain: str = "vocoweb.local"
     
     # Pexels API (Free stock photos)
     pexels_api_key: str = ""

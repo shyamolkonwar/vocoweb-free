@@ -147,7 +147,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                     fontSize: '12px',
                                     fontWeight: 'bold'
                                 }}>L</span>
-                                Laxizen
+                                Vocoweb
                             </span>
 
                             <DashboardHeader />

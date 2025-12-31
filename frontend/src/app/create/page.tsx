@@ -3,7 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import ProgressHeader from '@/components/ProgressHeader';
+import FocusCard from '@/components/FocusCard';
+import MicButton from '@/components/MicButton';
+import ThinkingSteps from '@/components/ThinkingSteps';
 import VoiceInput from '@/components/VoiceInput';
 import AuthModal from '@/components/auth/AuthModal';
 import { useAuth } from '@/context/AuthContext';
@@ -26,44 +29,41 @@ const examples = {
 const content = {
     en: {
         title: "Tell us about your business",
-        subtitle: "Describe your business using text or voice. We'll create a professional website for you.",
+        subtitle: "Include your business name, location, and what you sell. You can speak in Hindi or English.",
         placeholder: "Example: I run a dental clinic in Dibrugarh. We specialize in teeth cleaning, root canal treatment, and braces. Our clinic is open from 9 AM to 8 PM.",
         examplesTitle: "Need inspiration? Try these:",
         generate: "Generate My Website",
         generating: "Creating your website...",
         charCount: "characters",
         minChars: "Minimum 20 characters",
-        textMode: "Type",
-        voiceMode: "Voice",
+        typeManually: "Or type it manually",
         voiceSubtitle: "Speak in English or Hindi",
-        orDivider: "or",
         loginRequired: "Please log in to generate your website",
         insufficientCredits: "You need more credits to generate a website"
     },
     hi: {
         title: "अपने business के बारे में बताएं",
-        subtitle: "Text या voice से अपना business describe करें। हम आपके लिए professional website बनाएंगे।",
+        subtitle: "Business का नाम, location, और आप क्या बेचते हैं बताएं। Hindi या English में बोल सकते हैं।",
         placeholder: "जैसे: मैं Dibrugarh में dental clinic चलाता हूं। हम teeth cleaning, root canal, और braces में specialize करते हैं। Clinic सुबह 9 से रात 8 बजे तक खुला है।",
         examplesTitle: "Ideas चाहिए? ये try करें:",
         generate: "मेरी Website बनाएं",
         generating: "Website बना रहे हैं...",
         charCount: "characters",
         minChars: "कम से कम 20 characters",
-        textMode: "Type करें",
-        voiceMode: "बोलें",
+        typeManually: "या manually type करें",
         voiceSubtitle: "Hindi या English में बोलें",
-        orDivider: "या",
         loginRequired: "Website बनाने के लिए login करें",
         insufficientCredits: "आपको और credits चाहिए"
     }
 };
 
-type InputMode = 'text' | 'voice';
+type InputMode = 'voice' | 'text';
 
 export default function CreatePage() {
     const [language, setLanguage] = useState<'en' | 'hi'>('en');
-    const [inputMode, setInputMode] = useState<InputMode>('text');
+    const [inputMode, setInputMode] = useState<InputMode>('voice');
     const [businessDesc, setBusinessDesc] = useState('');
+    const [isRecording, setIsRecording] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState('');
     const [showAuthModal, setShowAuthModal] = useState(false);
@@ -77,7 +77,6 @@ export default function CreatePage() {
             return;
         }
 
-        // Check if user is logged in first
         if (!isAuthenticated) {
             setShowAuthModal(true);
             return;
@@ -118,133 +117,116 @@ export default function CreatePage() {
 
     const handleVoiceTranscription = (text: string) => {
         setBusinessDesc(text);
-        setInputMode('text'); // Switch to text mode to show/edit transcription
+        setInputMode('text');
         setError('');
     };
 
     const useExample = (example: string) => {
         setBusinessDesc(example);
+        setInputMode('text');
         setError('');
     };
 
     return (
-        <div className="app">
-            <Header language={language} setLanguage={setLanguage} />
+        <div className="app-shell">
+            <Header language={language} setLanguage={setLanguage} isAppMode={true} />
 
-            <main className="create-page">
-                <div className="create-container">
-                    <div className="create-header">
-                        <h1 className="create-title">{t.title}</h1>
-                        <p className="create-subtitle">{t.subtitle}</p>
-                    </div>
+            <main className="app-main">
+                <ProgressHeader currentStep="identity" />
+                <FocusCard>
+                    {isGenerating ? (
+                        <ThinkingSteps businessType="Bakery" />
+                    ) : (
+                        <>
+                            <div className="studio-header">
+                                <h1 className="studio-title">{t.title}</h1>
+                                <p className="studio-subtitle">{t.subtitle}</p>
+                            </div>
 
-                    {/* Input Mode Toggle */}
-                    <div className="input-mode-toggle">
-                        <button
-                            onClick={() => setInputMode('text')}
-                            className={`mode-btn ${inputMode === 'text' ? 'active' : ''}`}
-                            disabled={isGenerating}
-                        >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                            </svg>
-                            {t.textMode}
-                        </button>
-                        <button
-                            onClick={() => setInputMode('voice')}
-                            className={`mode-btn ${inputMode === 'voice' ? 'active' : ''}`}
-                            disabled={isGenerating}
-                        >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                                <line x1="12" y1="19" x2="12" y2="23" />
-                                <line x1="8" y1="23" x2="16" y2="23" />
-                            </svg>
-                            {t.voiceMode}
-                        </button>
-                    </div>
-
-                    <div className="create-form">
-                        {inputMode === 'voice' ? (
-                            <>
-                                <VoiceInput
-                                    language={language}
-                                    onTranscription={handleVoiceTranscription}
-                                    disabled={isGenerating}
-                                />
-                                <p className="voice-hint">{t.voiceSubtitle}</p>
-                            </>
-                        ) : (
-                            <>
-                                <div className="input-wrapper">
-                                    <textarea
-                                        value={businessDesc}
-                                        onChange={(e) => {
-                                            setBusinessDesc(e.target.value);
-                                            setError('');
+                            {inputMode === 'voice' ? (
+                                <div className="voice-mode-container">
+                                    <div style={{ display: 'none' }}>
+                                        <VoiceInput
+                                            language={language}
+                                            onTranscription={handleVoiceTranscription}
+                                            disabled={isGenerating}
+                                        />
+                                    </div>
+                                    <MicButton
+                                        isRecording={isRecording}
+                                        onClick={() => {
+                                            setIsRecording(!isRecording);
+                                            // Voice input logic will be handled by VoiceInput component
                                         }}
-                                        placeholder={t.placeholder}
-                                        className="business-input"
-                                        rows={6}
                                         disabled={isGenerating}
                                     />
-                                    <div className="input-footer">
-                                        <span className={`char-count ${businessDesc.length < 20 ? 'low' : ''}`}>
-                                            {businessDesc.length} {t.charCount}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {error && <p className="form-error">{error}</p>}
-
-                                <button
-                                    onClick={handleGenerate}
-                                    disabled={isGenerating || businessDesc.trim().length < 20}
-                                    className="btn-primary btn-full btn-large"
-                                >
-                                    {isGenerating ? (
-                                        <>
-                                            <span className="spinner"></span>
-                                            {t.generating}
-                                        </>
-                                    ) : (
-                                        t.generate
-                                    )}
-                                </button>
-                            </>
-                        )}
-                    </div>
-
-                    {inputMode === 'text' && (
-                        <div className="examples-section">
-                            <h3 className="examples-title">{t.examplesTitle}</h3>
-                            <div className="examples-grid">
-                                {examples[language].map((example, index) => (
+                                    <p className="voice-hint">{t.voiceSubtitle}</p>
                                     <button
-                                        key={index}
-                                        onClick={() => useExample(example)}
-                                        className="example-card"
-                                        disabled={isGenerating}
+                                        className="type-manually-link"
+                                        onClick={() => setInputMode('text')}
                                     >
-                                        "{example}"
+                                        {t.typeManually}
                                     </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </main>
+                                </div>
+                            ) : (
+                                <div className="text-mode-container">
+                                    <div className="input-wrapper">
+                                        <textarea
+                                            value={businessDesc}
+                                            onChange={(e) => {
+                                                setBusinessDesc(e.target.value);
+                                                setError('');
+                                            }}
+                                            placeholder={t.placeholder}
+                                            className="business-input-studio"
+                                            rows={6}
+                                            disabled={isGenerating}
+                                        />
+                                        <div className="input-footer">
+                                            <span className={`char-count ${businessDesc.length < 20 ? 'low' : ''}`}>
+                                                {businessDesc.length} {t.charCount}
+                                            </span>
+                                        </div>
+                                    </div>
 
-            <Footer language={language} />
+                                    {error && <p className="form-error">{error}</p>}
+
+                                    <button
+                                        onClick={handleGenerate}
+                                        disabled={isGenerating || businessDesc.trim().length < 20}
+                                        className="btn-primary btn-full btn-large"
+                                    >
+                                        {t.generate}
+                                    </button>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </FocusCard>
+
+                {inputMode === 'text' && !isGenerating && (
+                    <div className="examples-section-studio">
+                        <h3 className="examples-title">{t.examplesTitle}</h3>
+                        <div className="examples-grid">
+                            {examples[language].map((example, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => useExample(example)}
+                                    className="example-card"
+                                >
+                                    "{example}"
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </main>
 
             {showAuthModal && (
                 <AuthModal
                     language={language}
                     onClose={() => setShowAuthModal(false)}
-                    title={language === 'en' ? 'Log in to continue' : 'आगे बढ़ने के लिए login करें'}
-                    subtitle={language === 'en' ? 'Sign in to generate and publish your website' : 'Website बनाने और publish करने के लिए sign in करें'}
+                    mode="save"
                 />
             )}
         </div>

@@ -1,4 +1,4 @@
-# Laxizen - AI Website Builder for Local Businesses
+# Vocoweb - AI Website Builder for Local Businesses
 
 > **Build professional websites using voice or text in English or Hindi**
 
@@ -31,7 +31,7 @@ An AI-powered platform that enables non-technical local business owners to creat
 
 ### ✅ Phase 4: Publishing Engine (Cloudflare Pages)
 - 1-click publish to Cloudflare Pages
-- Auto subdomain generation (`*.laxizen.fun`)
+- Auto subdomain generation (`*.vocoweb.fun`)
 - Cloudflare Worker proxy for custom domain routing
 - SSL enabled automatically
 - Instant deployment via Wrangler CLI
@@ -146,7 +146,7 @@ cp .env.supabase.template .env
 # - CLOUDFLARE_ACCOUNT_ID
 # - CLOUDFLARE_API_TOKEN
 # - CLOUDFLARE_PAGES_PROJECT=user-websites
-# - BASE_DOMAIN=laxizen.fun
+# - BASE_DOMAIN=vocoweb.fun
 # - UPSTASH_REDIS_URL
 # - UPSTASH_REDIS_TOKEN
 ```
@@ -190,7 +190,7 @@ cd frontend
 npm install
 
 # Create .env.local
-echo "NEXT_PUBLIC_API_BASE_URL=https://api-dev.laxizen.fun" > .env.local
+echo "NEXT_PUBLIC_API_BASE_URL=https://api-dev.vocoweb.fun" > .env.local
 echo "NEXT_PUBLIC_SUPABASE_URL=<your-supabase-url>" >> .env.local
 echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>" >> .env.local
 ```
@@ -214,7 +214,7 @@ cd frontend
 npm run dev
 
 # Terminal 5: Cloudflare Tunnel (optional, for production-like setup)
-cloudflared tunnel run laxizen-backend
+cloudflared tunnel run vocoweb-backend
 ```
 
 ### 7. Access the Application
@@ -223,7 +223,7 @@ cloudflared tunnel run laxizen-backend
 - **Create Website**: http://localhost:3000/create
 - **Dashboard**: http://localhost:3000/dashboard
 - **API Documentation**: http://localhost:8000/docs
-- **Published Sites**: https://*.laxizen.fun (production)
+- **Published Sites**: https://*.vocoweb.fun (production)
 
 ---
 
@@ -286,7 +286,7 @@ website-builder-fusion-focus/
 │
 ├── proxy-worker/               # Cloudflare Worker
 │   ├── src/
-│   │   └── index.js           # Proxy logic (*.laxizen.fun → Pages)
+│   │   └── index.js           # Proxy logic (*.vocoweb.fun → Pages)
 │   └── wrangler.toml          # Worker config
 │
 ├── docs/                       # Project documentation
@@ -319,7 +319,7 @@ SUPABASE_JWT_SECRET=your-jwt-secret
 CLOUDFLARE_ACCOUNT_ID=your-account-id
 CLOUDFLARE_API_TOKEN=your-api-token
 CLOUDFLARE_PAGES_PROJECT=user-websites
-BASE_DOMAIN=laxizen.fun
+BASE_DOMAIN=vocoweb.fun
 
 # Upstash Redis (Rate Limiting)
 UPSTASH_REDIS_URL=https://...
@@ -337,7 +337,7 @@ DEBUG=false
 ### Frontend (`frontend/.env.local`)
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=https://api-dev.laxizen.fun
+NEXT_PUBLIC_API_BASE_URL=https://api-dev.vocoweb.fun
 NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```

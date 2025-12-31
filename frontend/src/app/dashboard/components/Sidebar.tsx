@@ -64,7 +64,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
                         fontSize: '14px',
                         fontWeight: 'bold'
                     }}>L</span>
-                    Laxizen
+                    Vocoweb
                 </span>
             </div>
 

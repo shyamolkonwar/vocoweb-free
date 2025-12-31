@@ -1,9 +1,9 @@
 version: '3.8'
 
 # ============================================
-# Laxizen Backend Docker Compose
+# Vocoweb Backend Docker Compose
 # Starts: API + Celery Worker + Cloudflare Tunnel
-# Frontend on Vercel connects via api-dev.laxizen.fun
+# Frontend on Vercel connects via api.vocoweb.in
 # ============================================
 
 services:
@@ -14,7 +14,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.api
-    container_name: laxizen-api
+    container_name: vocoweb-api
     ports:
       - "8000:8000"
     env_file:
@@ -36,7 +36,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.worker
-    container_name: laxizen-worker
+    container_name: vocoweb-worker
     env_file:
       - ./backend/.env
     volumes:
@@ -47,11 +47,11 @@ services:
 
   # =====================================
   # Cloudflare Tunnel
-  # Exposes local API to api-dev.laxizen.fun
+  # Exposes local API to api.vocoweb.in
   # =====================================
   tunnel:
     image: cloudflare/cloudflared:latest
-    container_name: laxizen-tunnel
+    container_name: vocoweb-tunnel
     command: tunnel --config /etc/cloudflared/config.yml run
     volumes:
       - /Users/shyamolkonwar/.cloudflared:/etc/cloudflared:ro
@@ -71,7 +71,7 @@ volumes:
 # Services started (in order):
 #   1. api - FastAPI on port 8000
 #   2. worker - Celery for AI tasks
-#   3. tunnel - Cloudflare tunnel to api-dev.laxizen.fun
+#   3. tunnel - Cloudflare tunnel to api.vocoweb.in
 #
 # Prerequisites:
 #   - backend/.env configured (REDIS_URL, SUPABASE, CLOUDFLARE, OPENAI)

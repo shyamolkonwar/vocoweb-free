@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { X, Mail } from 'lucide-react';
 import GoogleLoginButton from './GoogleLoginButton';
 
 interface AuthModalProps {
@@ -7,50 +9,134 @@ interface AuthModalProps {
     onClose: () => void;
     title?: string;
     subtitle?: string;
+    mode?: 'save' | 'default';
 }
 
 const content = {
     en: {
-        defaultTitle: 'Login to continue',
-        defaultSubtitle: 'Sign in to publish and manage your websites',
-        close: 'Cancel'
+        saveTitle: 'Save your progress',
+        saveSubtitle: 'Log in to save, publish, and edit your websites.',
+        defaultTitle: 'Unlock your dashboard',
+        defaultSubtitle: 'Log in to save, publish, and edit your websites.',
+        continueWithGoogle: 'Continue with Google',
+        continueWithEmail: 'Continue with Email',
+        or: 'Or',
+        emailPlaceholder: 'name@email.com',
+        continue: 'Continue',
+        noAccount: 'No account?',
+        signUp: 'Sign up'
     },
     hi: {
-        defaultTitle: 'जारी रखने के लिए Login करें',
-        defaultSubtitle: 'अपनी websites publish और manage करने के लिए sign in करें',
-        close: 'Cancel करें'
+        saveTitle: 'अपनी Progress Save करें',
+        saveSubtitle: 'Websites save, publish और edit करने के लिए login करें।',
+        defaultTitle: 'Dashboard unlock करें',
+        defaultSubtitle: 'Websites save, publish और edit करने के लिए login करें।',
+        continueWithGoogle: 'Google से जारी रखें',
+        continueWithEmail: 'Email से जारी रखें',
+        or: 'या',
+        emailPlaceholder: 'name@email.com',
+        continue: 'Continue',
+        noAccount: 'Account नहीं है?',
+        signUp: 'Sign up करें'
     }
 };
 
-export default function AuthModal({ language, onClose, title, subtitle }: AuthModalProps) {
+export default function AuthModal({ language, onClose, title, subtitle, mode = 'default' }: AuthModalProps) {
     const t = content[language];
+    const [isOpen, setIsOpen] = useState(false);
+    const [showEmailInput, setShowEmailInput] = useState(false);
+    const [email, setEmail] = useState('');
+
+    // Animate in on mount
+    useEffect(() => {
+        // Small delay to trigger animation
+        const timer = setTimeout(() => setIsOpen(true), 10);
+        // Prevent body scroll when modal is open
+        document.body.style.overflow = 'hidden';
+
+        return () => {
+            clearTimeout(timer);
+            document.body.style.overflow = 'unset';
+        };
+    }, []);
+
+    const handleClose = () => {
+        setIsOpen(false);
+        setTimeout(onClose, 150); // Wait for animation to complete
+    };
 
     const handleBackdropClick = (e: React.MouseEvent) => {
         if (e.target === e.currentTarget) {
-            onClose();
+            handleClose();
         }
     };
 
+    const displayTitle = title || (mode === 'save' ? t.saveTitle : t.defaultTitle);
+    const displaySubtitle = subtitle || (mode === 'save' ? t.saveSubtitle : t.defaultSubtitle);
+
     return (
-        <div className="modal-backdrop" onClick={handleBackdropClick}>
-            <div className="modal-content auth-modal">
-                <button className="modal-close" onClick={onClose}>
-                    ×
+        <div
+            className={`auth-modal-overlay ${isOpen ? 'open' : ''}`}
+            onClick={handleBackdropClick}
+        >
+            <div className={`auth-modal-card ${isOpen ? 'open' : ''}`}>
+                {/* Close Button */}
+                <button
+                    className="auth-modal-close"
+                    onClick={handleClose}
+                    aria-label="Close"
+                >
+                    <X size={24} strokeWidth={2} />
                 </button>
 
+                {/* Header */}
                 <div className="auth-modal-header">
-                    <h2>{title || t.defaultTitle}</h2>
-                    <p>{subtitle || t.defaultSubtitle}</p>
+                    <h2 className="auth-modal-title">{displayTitle}</h2>
+                    <p className="auth-modal-subtitle">{displaySubtitle}</p>
                 </div>
 
-                <div className="auth-modal-body">
+                {/* Actions */}
+                <div className="auth-modal-actions">
+                    {/* Google Login - Primary */}
                     <GoogleLoginButton language={language} />
+
+                    {/* Divider */}
+                    <div className="auth-modal-divider">
+                        <div className="divider-line"></div>
+                        <span className="divider-text">{t.or}</span>
+                        <div className="divider-line"></div>
+                    </div>
+
+                    {/* Email Login */}
+                    {!showEmailInput ? (
+                        <button
+                            className="auth-email-btn"
+                            onClick={() => setShowEmailInput(true)}
+                        >
+                            <Mail size={20} strokeWidth={2} />
+                            <span>{t.continueWithEmail}</span>
+                        </button>
+                    ) : (
+                        <div className="auth-email-form">
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder={t.emailPlaceholder}
+                                className="auth-email-input"
+                                autoFocus
+                            />
+                            <button className="auth-continue-btn">
+                                {t.continue}
+                            </button>
+                        </div>
+                    )}
                 </div>
 
+                {/* Footer */}
                 <div className="auth-modal-footer">
-                    <button onClick={onClose} className="btn-text">
-                        {t.close}
-                    </button>
+                    <span className="footer-text">{t.noAccount}</span>
+                    <button className="footer-link">{t.signUp}</button>
                 </div>
             </div>
         </div>

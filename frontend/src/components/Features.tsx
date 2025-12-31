@@ -25,7 +25,7 @@ const content = {
                 number: "03",
                 title: "Go live instantly",
                 desc: "One click and your website is live. Share it with customers immediately.",
-                example: "yoursite.laxizen.fun"
+                example: "yoursite.vocoweb.in"
             }
         ]
     },
@@ -49,7 +49,7 @@ const content = {
                 number: "03",
                 title: "तुरंत live करें",
                 desc: "एक click और आपकी website live। तुरंत customers के साथ share करें।",
-                example: "yoursite.laxizen.fun"
+                example: "yoursite.vocoweb.in"
             }
         ]
     }

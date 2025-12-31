@@ -9,19 +9,19 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Laxizen - Build Your Business Website Using Voice or Text",
+  title: "Vocoweb - Build Your Business Website Using Voice or Text",
   description: "AI-powered website builder for local businesses. Create professional websites in minutes using voice or text in Hindi & English. No coding required.",
   keywords: ["website builder", "AI", "local business", "Hindi", "voice to website", "small business website"],
-  authors: [{ name: "Laxizen" }],
+  authors: [{ name: "Vocoweb" }],
   openGraph: {
-    title: "Laxizen - Build Your Business Website Using Voice or Text",
+    title: "Vocoweb - Build Your Business Website Using Voice or Text",
     description: "AI-powered website builder for local businesses. No coding required.",
     type: "website",
     locale: "en_IN",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Laxizen - AI Website Builder for Local Businesses",
+    title: "Vocoweb - AI Website Builder for Local Businesses",
     description: "Create professional websites in minutes using voice or text.",
   },
   viewport: {
@@ -55,4 +55,3 @@ export default function RootLayout({
     </html>
   );
 }
-

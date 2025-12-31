@@ -6,7 +6,7 @@ import { createClient } from '@/utils/supabase/server';
 import { LeadsTable, LeadsTableSkeleton, LeadStats } from './components';
 
 export const metadata = {
-    title: 'Leads & Customers | Laxizen Dashboard',
+    title: 'Leads & Customers | Vocoweb Dashboard',
 };
 
 async function getLeads() {

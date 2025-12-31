@@ -8,7 +8,7 @@ import { WebsiteList } from './components/WebsiteList';
 import { CardSkeleton, WebsiteListSkeleton } from './components/Skeletons';
 
 export const metadata = {
-    title: 'Dashboard | Laxizen',
+    title: 'Dashboard | Vocoweb',
 };
 
 export default async function DashboardPage() {

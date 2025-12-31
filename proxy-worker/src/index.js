@@ -8,11 +8,11 @@ export default {
         // Split the hostname by dots
         const parts = hostname.split('.');
 
-        // If we are on the root domain (laxizen.fun) or www, do nothing or redirect
+        // If we are on the root domain (vocoweb.in) or www, do nothing or redirect
         // Adjust '2' if you have a complex TLD like .co.uk (would be 3)
         if (parts.length <= 2 || parts[0] === 'www') {
             // Optional: Redirect root to your main landing page
-            return Response.redirect('https://laxizen.fun', 301);
+            return Response.redirect('https://vocoweb.in', 301);
         }
 
         // Skip api-dev subdomain (handled by Cloudflare Tunnel)

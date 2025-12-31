@@ -356,7 +356,7 @@ async def build_multipage_website(
     language: str = "en",
     images: Optional[Dict[str, str]] = None,
     website_id: Optional[str] = None,
-    api_url: str = "https://api.laxizen.fun",
+    api_url: str = "https://api.vocoweb.in",
     popup_config: Optional[Dict[str, Any]] = None
 ) -> Dict[str, str]:
     """
@@ -581,4 +581,3 @@ def build_multipage_website_sync(
         )
     finally:
         loop.close()
-

@@ -5,5 +5,5 @@ compatibility_date = "2024-01-01"
 # This connects the worker to your domain
 # Note the /* at the end to match all paths
 routes = [
-	{ pattern = "*.laxizen.fun/*", zone_name = "laxizen.fun" }
+	{ pattern = "*.vocoweb.in/*", zone_name = "vocoweb.in" }
 ]
