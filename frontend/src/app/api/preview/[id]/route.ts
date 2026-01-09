@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/utils/supabase/server';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
@@ -9,7 +10,22 @@ export async function GET(
     try {
         const { id } = await params;
 
-        const response = await fetch(`${BACKEND_URL}/api/preview/${id}`);
+        // SECURITY: VULN-04 fix - Require authentication
+        const supabase = await createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session?.access_token) {
+            return NextResponse.json(
+                { error: 'Authentication required' },
+                { status: 401 }
+            );
+        }
+
+        const response = await fetch(`${BACKEND_URL}/api/preview/${id}`, {
+            headers: {
+                'X-Authorization': `Bearer ${session.access_token}`,  // Forward auth token
+            }
+        });
         const data = await response.json();
 
         if (response.ok) {

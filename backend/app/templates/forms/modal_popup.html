@@ -125,7 +125,7 @@
     const POPUP_TRIGGER = '{{ popup_trigger | default("time") }}'; // 'time', 'exit', 'scroll'
     const POPUP_DELAY = {{ popup_delay | default (5) }} * 1000; // seconds to ms
     const POPUP_SCROLL_PERCENT = {{ popup_scroll_percent | default (50) }};
-    const API_URL = '{{ api_url | default("https://api.vocoweb.in") }}';
+    const API_URL = '{{ api_url | default("") }}';
 
     let popupShown = false;
 

@@ -168,7 +168,8 @@ async def publish_site(website_id: str, user: AuthUser = Depends(require_auth)):
         )
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Publishing failed: {str(e)}")
+        print(f"Publishing error: {e}")  # SECURITY: Log internally
+        raise HTTPException(status_code=500, detail="Publishing failed. Please try again.")
 
 
 @router.post("/republish/{website_id}", response_model=PublishResponse)
@@ -251,7 +252,8 @@ async def republish_site(website_id: str, user: AuthUser = Depends(require_auth)
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Republishing failed: {str(e)}")
+        print(f"Republishing error: {e}")  # SECURITY: Log internally
+        raise HTTPException(status_code=500, detail="Republishing failed. Please try again.")
 
 
 @router.delete("/publish/{website_id}")
@@ -297,11 +299,19 @@ async def unpublish_site(website_id: str, user: AuthUser = Depends(require_auth)
 
 
 @router.get("/publish/{website_id}/status")
-async def get_publish_status(website_id: str):
-    """Get the publishing status of a website."""
+async def get_publish_status(
+    website_id: str,
+    user: AuthUser = Depends(require_auth)  # SECURITY: VULN-H03 fix - Require authentication
+):
+    """Get the publishing status of a website (authenticated)."""
     # Try Supabase deployment first (only if valid UUID)
     if is_valid_uuid(website_id):
         try:
+            # SECURITY: Verify ownership before returning status
+            website = await supabase_service.get_website(website_id, user.id)
+            if not website:
+                raise HTTPException(status_code=404, detail="Website not found")
+            
             deployment = await supabase_service.get_deployment(website_id)
             
             if deployment:
@@ -313,10 +323,18 @@ async def get_publish_status(website_id: str):
                     "ssl_status": deployment.get("ssl_status", "active"),
                     "status": deployment.get("status")
                 }
+        except HTTPException:
+            raise
         except Exception:
             pass  # Supabase not configured or table doesn't exist
     
-    # Fallback to local registry
+    # Fallback to local registry - verify ownership via loaded websites
+    from app.api.routes.generate import get_website_with_ownership
+    
+    website_check = get_website_with_ownership(website_id, user.id)
+    if not website_check:
+        raise HTTPException(status_code=404, detail="Website not found")
+    
     published = get_published_site(website_id)
     
     if published:

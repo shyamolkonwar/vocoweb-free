@@ -114,7 +114,7 @@ export default function PublishSuccessModal({
                     </div>
                     <div className="url-card-content">
                         <span className="url-card-label">{t.publicLink}</span>
-                        <span className="url-card-url">{subdomain}.vocoweb.in</span>
+                        <span className="url-card-url">{url.replace(/^https?:\/\//, '')}</span>
                     </div>
                     <button className="url-card-copy" onClick={onCopy}>
                         {copied ? <Check size={18} /> : <Copy size={18} />}

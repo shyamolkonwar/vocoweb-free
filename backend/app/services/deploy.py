@@ -125,9 +125,33 @@ async def publish_website_cloudflare(
         if not cloudflare_service.is_configured():
             raise Exception("Production mode requires Cloudflare configuration. Please set CLOUDFLARE_* env variables.")
         
-        result = await cloudflare_service.deploy_to_pages(
+        # Prepare files
+        base_domain = settings.base_domain
+        site_url = f"https://{subdomain}.{base_domain}"
+        
+        robots_txt = f"""User-agent: *
+Allow: /
+Sitemap: {site_url}/sitemap.xml"""
+
+        sitemap_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+   <url>
+      <loc>{site_url}/</loc>
+      <lastmod>{datetime.now().strftime('%Y-%m-%d')}</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>1.0</priority>
+   </url>
+</urlset>"""
+
+        files = {
+            "index.html": html_content,
+            "robots.txt": robots_txt,
+            "sitemap.xml": sitemap_xml
+        }
+
+        result = await cloudflare_service.deploy_multipage_to_pages(
             website_id=website_id,
-            html_content=html_content,
+            pages=files,
             subdomain=subdomain,
             user_id=user_id
         )
@@ -153,9 +177,33 @@ async def publish_website_cloudflare(
     
     # Development mode: try Cloudflare, but fallback to local if not configured or fails
     if cloudflare_service.is_configured():
-        result = await cloudflare_service.deploy_to_pages(
+        # Prepare files
+        base_domain = settings.base_domain
+        site_url = f"https://{subdomain}.{base_domain}"
+        
+        robots_txt = f"""User-agent: *
+Allow: /
+Sitemap: {site_url}/sitemap.xml"""
+
+        sitemap_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+   <url>
+      <loc>{site_url}/</loc>
+      <lastmod>{datetime.now().strftime('%Y-%m-%d')}</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>1.0</priority>
+   </url>
+</urlset>"""
+
+        files = {
+            "index.html": html_content,
+            "robots.txt": robots_txt,
+            "sitemap.xml": sitemap_xml
+        }
+
+        result = await cloudflare_service.deploy_multipage_to_pages(
             website_id=website_id,
-            html_content=html_content,
+            pages=files,
             subdomain=subdomain,
             user_id=user_id
         )
@@ -207,6 +255,25 @@ def publish_website_local(
     # Write HTML file
     html_path = site_dir / "index.html"
     html_path.write_text(html_content)
+
+    # Write Robots & Sitemap (Mock)
+    api_url = f"http://localhost:8000/sites/{subdomain}"
+    
+    robots_txt = f"""User-agent: *
+Allow: /
+Sitemap: {api_url}/sitemap.xml"""
+    (site_dir / "robots.txt").write_text(robots_txt)
+
+    sitemap_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+   <url>
+      <loc>{api_url}/</loc>
+      <lastmod>{datetime.now().strftime('%Y-%m-%d')}</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>1.0</priority>
+   </url>
+</urlset>"""
+    (site_dir / "sitemap.xml").write_text(sitemap_xml)
     
     # For local development, serve via the API
     api_url = f"http://localhost:8000/sites/{subdomain}"

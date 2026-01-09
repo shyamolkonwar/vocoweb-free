@@ -1,0 +1,61 @@
+<!-- Feature_Grid_Icons -->
+<!-- Clean 3-column grid with icon, bold title, 2 lines of text per card -->
+<!-- Best for: Medical Clinics, SaaS, Accountants -->
+<!-- Variables: section_title, section_subtitle, features[], primary_color -->
+
+<section id="services" class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-6">
+        <!-- Section Header -->
+        <div class="text-center max-w-2xl mx-auto mb-16">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                {{ section_title | default("Our Services") }}
+            </h2>
+            <p class="text-lg text-gray-600">
+                {{ section_subtitle | default("Everything you need to succeed, all in one place.") }}
+            </p>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {% for feature in features %}
+            <div
+                class="group p-6 rounded-2xl bg-gray-50 hover:bg-white hover:shadow-xl border border-transparent hover:border-gray-100 transition-all duration-300">
+                <!-- Icon -->
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-colors"
+                    style="background: {{ primary_color }}15; color: {{ primary_color }};">
+                    {% if feature.icon %}
+                    {{ feature.icon | safe }}
+                    {% else %}
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    {% endif %}
+                </div>
+
+                <!-- Title -->
+                <h3 class="text-xl font-bold text-gray-900 mb-2">
+                    {{ feature.title }}
+                </h3>
+
+                <!-- Description (2 lines) -->
+                <p class="text-gray-600 leading-relaxed line-clamp-2">
+                    {{ feature.description }}
+                </p>
+
+                <!-- Optional link -->
+                {% if feature.link %}
+                <a href="{{ feature.link }}"
+                    class="inline-flex items-center gap-1 mt-4 text-sm font-medium transition-colors hover:gap-2"
+                    style="color: {{ primary_color }};">
+                    Learn more
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </a>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>

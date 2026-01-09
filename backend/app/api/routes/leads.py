@@ -70,6 +70,17 @@ async def submit_lead(lead: LeadSubmitRequest, request: Request):
     
     Rate limited to prevent abuse.
     """
+    # SECURITY: VULN-M01 fix - IP-based rate limiting for public endpoint
+    from app.core.rate_limit import check_ip_rate_limit
+    
+    client_ip = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+    if not client_ip and request.client:
+        client_ip = request.client.host
+    
+    is_allowed, msg, _ = check_ip_rate_limit(client_ip, "lead_submit")
+    if not is_allowed:
+        raise HTTPException(status_code=429, detail=msg)
+    
     # Validate website exists
     website = await supabase_service.get_website_public(lead.website_id)
     if not website:
@@ -82,18 +93,28 @@ async def submit_lead(lead: LeadSubmitRequest, request: Request):
             detail="Website is not published. Cannot accept leads."
         )
     
+    # SECURITY: Sanitize metadata to prevent injection
+    import re
+    
+    def sanitize_header(value: str) -> str:
+        """Remove potentially dangerous chars from header values."""
+        if not value:
+            return ""
+        # Only allow alphanumeric, spaces, and basic punctuation
+        return re.sub(r'[^\w\s\.\-\/\:\;\,\(\)]', '', str(value)[:500])
+    
     # Store lead in Supabase
     lead_data = {
         "website_id": lead.website_id,
-        "customer_name": lead.customer_name,
-        "customer_phone": lead.customer_phone,
-        "customer_email": lead.customer_email,
-        "message": lead.message,
-        "service_interested": lead.service_interested,
-        "source_page": lead.source_page or "contact",
+        "customer_name": lead.customer_name[:200] if lead.customer_name else "",
+        "customer_phone": re.sub(r'[^\d\+\-\s]', '', lead.customer_phone or "")[:20],
+        "customer_email": lead.customer_email[:200] if lead.customer_email else "",
+        "message": lead.message[:2000] if lead.message else "",
+        "service_interested": lead.service_interested[:200] if lead.service_interested else "",
+        "source_page": lead.source_page[:100] if lead.source_page else "contact",
         "metadata": {
-            "user_agent": request.headers.get("user-agent"),
-            "origin": request.headers.get("origin"),
+            "user_agent": sanitize_header(request.headers.get("user-agent", ""))[:300],
+            "origin": sanitize_header(request.headers.get("origin", ""))[:200],
             "submitted_at": datetime.utcnow().isoformat()
         }
     }

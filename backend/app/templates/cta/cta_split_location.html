@@ -1,0 +1,137 @@
+<!-- CTA_Split_Location -->
+<!-- Left: Contact Details (Phone, Email, Hours), Right: Embedded Google Map -->
+<!-- Best for: Physical shops (Bakeries, Stores, Clinics) -->
+<!-- Variables: phone, email, address, hours[], map_embed_url, primary_color -->
+
+<section id="contact" class="py-20 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-6">
+        <!-- Section Header -->
+        <div class="text-center max-w-2xl mx-auto mb-12">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                {{ section_title | default("Visit Us") }}
+            </h2>
+            <p class="text-lg text-gray-600">
+                {{ section_subtitle | default("We'd love to see you. Drop by anytime!") }}
+            </p>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-8 lg:gap-12">
+            <!-- Left: Contact Details -->
+            <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
+                <div class="space-y-8">
+                    <!-- Phone -->
+                    {% if phone %}
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                            style="background: {{ primary_color }}15; color: {{ primary_color }};">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900 mb-1">Phone</h3>
+                            <a href="tel:{{ phone }}" class="text-gray-600 hover:text-gray-900 transition-colors">
+                                {{ phone }}
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Email -->
+                    {% if email %}
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                            style="background: {{ primary_color }}15; color: {{ primary_color }};">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900 mb-1">Email</h3>
+                            <a href="mailto:{{ email }}" class="text-gray-600 hover:text-gray-900 transition-colors">
+                                {{ email }}
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Address -->
+                    {% if address %}
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                            style="background: {{ primary_color }}15; color: {{ primary_color }};">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900 mb-1">Address</h3>
+                            <p class="text-gray-600">{{ address }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Hours -->
+                    {% if hours %}
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                            style="background: {{ primary_color }}15; color: {{ primary_color }};">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900 mb-2">Hours</h3>
+                            <div class="space-y-1 text-gray-600 text-sm">
+                                {% for hour in hours %}
+                                <p>{{ hour }}</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Directions Button -->
+                {% if google_maps_url %}
+                <a href="{{ google_maps_url }}" target="_blank" rel="noopener"
+                    class="mt-8 w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-semibold text-white transition-all hover:scale-[1.02]"
+                    style="background: {{ primary_color }};">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    </svg>
+                    Get Directions
+                </a>
+                {% endif %}
+            </div>
+
+            <!-- Right: Map -->
+            <div class="rounded-3xl overflow-hidden shadow-sm border border-gray-100 min-h-[400px]">
+                {% if map_embed_url %}
+                <iframe src="{{ map_embed_url }}" class="w-full h-full min-h-[400px]" style="border:0;"
+                    allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
+                {% else %}
+                <div class="w-full h-full min-h-[400px] bg-gray-200 flex items-center justify-center">
+                    <div class="text-center text-gray-400">
+                        <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <p>Map will be displayed here</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>

@@ -4,6 +4,7 @@ compatibility_date = "2024-01-01"
 
 # This connects the worker to your domain
 # Note the /* at the end to match all paths
+# CHANGE THIS: Update pattern and zone_name to your domain
 routes = [
-	{ pattern = "*.vocoweb.in/*", zone_name = "vocoweb.in" }
+	{ pattern = "*.yourdomain.com/*", zone_name = "yourdomain.com" }
 ]

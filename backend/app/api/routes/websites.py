@@ -188,11 +188,15 @@ async def get_user_credits(user: AuthUser = Depends(require_auth)):
 
 @router.get("/credits/costs")
 async def get_credit_costs():
-    """Get the credit costs for various actions."""
-    from app.services import CREDIT_COSTS
+    """
+    Get the credit costs for various actions.
+    Fetches from database if available, falls back to hardcoded defaults.
+    """
+    # Try to fetch from database first
+    costs = await supabase_service.get_credit_costs_from_db()
     
     return {
-        "costs": CREDIT_COSTS,
+        "costs": costs,
         "description": {
             "generate": "Generate a new website from text",
             "voice_generate": "Generate a website from voice input",
@@ -201,3 +205,41 @@ async def get_credit_costs():
             "publish": "Publish a website to live URL"
         }
     }
+
+
+@router.get("/payment-links")
+async def get_payment_links(market: str = "GLOBAL"):
+    """
+    Get payment link for a specific market.
+    
+    Args:
+        market: Market code ('IN' for India, 'GLOBAL' for international)
+    
+    Returns:
+        Payment link data including URL, amount, currency, features
+    """
+    payment_link = await supabase_service.get_payment_links(market)
+    
+    if not payment_link:
+        # SECURITY: Return error instead of hardcoded fallback
+        raise HTTPException(
+            status_code=503,
+            detail="Payment configuration unavailable. Please try again later."
+        )
+    
+    return payment_link
+
+
+@router.get("/payment-links/all")
+async def get_all_payment_links():
+    """Get all active payment links for all markets."""
+    links = await supabase_service.get_all_payment_links()
+    
+    if not links:
+        # SECURITY: VULN-07 fix - Don't return hardcoded test payment links
+        raise HTTPException(
+            status_code=503,
+            detail="Payment configuration unavailable. Please try again later."
+        )
+    
+    return {"payment_links": links}

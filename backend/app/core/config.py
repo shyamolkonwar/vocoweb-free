@@ -28,19 +28,27 @@ class Settings(BaseSettings):
     # Server
     host: str = "0.0.0.0"
     port: int = 8000
-    debug: bool = True
+    debug: bool = False  # SECURITY: Default to False for production
     
     @property
     def is_production(self) -> bool:
         """Check if running in production mode."""
         return self.app_mode.lower() == "production"
     
-    # CORS origins
+    def validate_production_config(self) -> None:
+        """SECURITY: Validate required config is set in production mode."""
+        if self.is_production:
+            if not self.supabase_service_key:
+                raise ValueError("SUPABASE_SERVICE_KEY is required in production mode")
+            if not self.supabase_url:
+                raise ValueError("SUPABASE_URL is required in production mode")
+            if not self.openai_api_key:
+                raise ValueError("OPENAI_API_KEY is required in production mode")
+    
+    # CORS origins - SECURITY: No wildcards, explicit origins only
     cors_origins: list[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "https://vocoweb.in",
-        "https://*.vocoweb.in",
     ]
     
     # Rate limiting

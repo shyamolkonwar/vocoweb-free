@@ -19,6 +19,9 @@ services:
       - "8000:8000"
     env_file:
       - ./backend/.env
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     volumes:
       - website_data:/app/app/data
     restart: unless-stopped
@@ -54,7 +57,8 @@ services:
     container_name: vocoweb-tunnel
     command: tunnel --config /etc/cloudflared/config.yml run
     volumes:
-      - /Users/shyamolkonwar/.cloudflared:/etc/cloudflared:ro
+      # MEDIUM-008: Use env var instead of hardcoded path
+      - ${CLOUDFLARED_CONFIG_PATH:-~/.cloudflared}:/etc/cloudflared:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:

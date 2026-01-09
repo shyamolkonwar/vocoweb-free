@@ -86,6 +86,15 @@
         transform: translateY(-100%);
         margin-top: -4px;
       }
+      /* Protected elements - VocoWeb watermark */
+      [data-vocoweb-protected],
+      [data-vocoweb-protected] * {
+        cursor: not-allowed !important;
+        pointer-events: none !important;
+      }
+      [data-vocoweb-protected]:hover {
+        outline: none !important;
+      }
     `;
         document.head.appendChild(style);
     }
@@ -96,6 +105,9 @@
             // Skip very small elements or script/style content
             if (el.closest('script, style, nav')) return;
             if (el.textContent.trim().length < 2 && el.tagName !== 'IMG') return;
+
+            // Skip protected VocoWeb watermark elements
+            if (el.closest('[data-vocoweb-protected]') || el.hasAttribute('data-vocoweb-protected')) return;
 
             ensureElementId(el);
         });
@@ -116,6 +128,13 @@
         const target = e.target.closest('[data-lid]');
 
         if (!target) return;
+
+        // Block editing of protected watermark elements
+        if (target.closest('[data-vocoweb-protected]') || target.hasAttribute('data-vocoweb-protected')) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
 
         // Prevent default behavior (links, buttons)
         e.preventDefault();

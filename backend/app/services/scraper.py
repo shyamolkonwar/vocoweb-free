@@ -247,9 +247,45 @@ def validate_url(url: str) -> tuple[bool, str]:
     if not parsed.netloc:
         return False, "Invalid URL format"
     
-    # Block localhost and private IPs
-    blocked = ["localhost", "127.0.0.1", "0.0.0.0", "192.168.", "10.", "172."]
-    if any(b in parsed.netloc.lower() for b in blocked):
-        return False, "Cannot scrape local or private addresses"
+    # SECURITY: Proper SSRF protection with IP validation
+    import socket
+    import ipaddress
+    
+    hostname = parsed.netloc.split(':')[0]  # Remove port if present
+    
+    # Block obvious private hostnames first
+    blocked_hosts = ["localhost", "metadata.google.internal", "instance-data"]
+    if hostname.lower() in blocked_hosts:
+        return False, "Cannot scrape private addresses"
+    
+    try:
+        # Resolve hostname to IP to catch DNS rebinding attacks
+        ip_str = socket.gethostbyname(hostname)
+        ip_obj = ipaddress.ip_address(ip_str)
+        
+        # Block private IPs (10.x, 172.16-31.x, 192.168.x)
+        if ip_obj.is_private:
+            return False, "Cannot scrape private IP addresses"
+        
+        # Block loopback (127.0.0.0/8, ::1)
+        if ip_obj.is_loopback:
+            return False, "Cannot scrape localhost"
+        
+        # Block link-local (169.254.x.x) - includes cloud metadata!
+        if ip_obj.is_link_local:
+            return False, "Cannot scrape link-local addresses"
+        
+        # Block reserved ranges
+        if ip_obj.is_reserved:
+            return False, "Cannot scrape reserved addresses"
+        
+        # Explicitly block AWS/GCP/Azure metadata endpoint
+        if ip_str == "169.254.169.254":
+            return False, "Cannot scrape cloud metadata endpoints"
+        
+    except socket.gaierror:
+        return False, "Could not resolve hostname"
+    except ValueError:
+        return False, "Invalid IP address"
     
     return True, url

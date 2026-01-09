@@ -48,7 +48,15 @@ export default function Hero({ language }: HeroProps) {
 
         {/* CTA Buttons */}
         <div className="hero-cta-container">
-          <Link href="/create" className="btn-primary">
+          <Link
+            href="/create?market=IN"
+            className="btn-primary"
+            style={{
+              backgroundColor: '#ffffff',
+              color: '#166534',
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)'
+            }}
+          >
             {t.cta}
           </Link>
           <button

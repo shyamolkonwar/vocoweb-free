@@ -123,9 +123,9 @@ class RateLimiter:
             return False, info
             
         except redis.RedisError as e:
-            # If Redis is down, allow the request (fail open)
+            # SECURITY: Fail closed - deny request when Redis is down
             print(f"Redis error in rate limiter: {e}")
-            return False, {"error": "Rate limiter unavailable"}
+            return True, {"error": "Rate limiter unavailable - request denied"}
     
     def check_ip_blocked(self, request: Request) -> bool:
         """Check if IP is blocked."""

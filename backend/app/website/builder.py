@@ -156,157 +156,133 @@ def inject_navigation_script(html_content: str) -> str:
 
 async def build_website(
     business: BusinessProfile,
-    layout: LayoutBlueprint,
+    layout: "LayoutBlueprint" = None,  # Kept for backward compatibility, ignored
     language: str = "en",
-    images: Optional[Dict[str, str]] = None
+    images: Optional[Dict[str, str]] = None,
+    theme_colors: Optional[Dict[str, str]] = None,
+    whatsapp_phone: Optional[str] = None,
+    whatsapp_message: Optional[str] = None,
+    style_guide: Optional[str] = None,
+    # New dual-market parameters
+    user_images: Optional[list] = None,
+    brand_voice: Optional[str] = None,
+    booking_link: Optional[str] = None,
+    email: Optional[str] = None,
+    google_map_link: Optional[str] = None
 ) -> str:
     """
-    Generate complete HTML website by assembling Jinja2 templates.
-    
+    Generate complete HTML website using direct AI code generation.
+
+    This replaces the old template assembler approach with direct AI generation.
+    The 'layout' parameter is kept for backward compatibility but is IGNORED.
+
     Args:
         business: Structured business information
-        layout: Layout configuration with component variants
+        layout: DEPRECATED - kept for backward compatibility, ignored
         language: Output language ('en' or 'hi')
-        images: Optional dict with 'hero' and 'about' image URLs
-    
+        images: Optional dict with 'hero' and 'about' image URLs (legacy)
+        theme_colors: Optional dict with color overrides
+        whatsapp_phone: Optional WhatsApp number for CTA buttons (India market)
+        whatsapp_message: Optional pre-filled WhatsApp message (India market)
+        style_guide: Optional style guide string
+        user_images: List of up to 3 user image URLs (India market - new)
+        brand_voice: Brand voice style (Global market - new)
+        booking_link: Calendly/Cal.com URL (Global market - new)
+        email: Contact email (Global market - new)
+        google_map_link: Google Maps embed link (India market - new)
+
     Returns:
         Complete HTML string for the website
     """
-    env = get_jinja_env()
-    labels = get_labels(language)
-    
-    # Get images from Pexels if not provided
-    if images is None:
-        from ..services.pexels_service import get_pexels_service
-        pexels = get_pexels_service()
-        images = await pexels.get_images_for_website(business.business_type)
-    
-    # Common context for all templates
-    base_context = {
-        # Business info
-        "business_name": business.business_name,
-        "business_type": business.business_type,
-        "business_icon": get_business_icon(business.business_type),
-        "location": business.location,
-        "tagline": business.tagline,
-        "description": business.description,
-        "services": business.services,
-        "cta": business.cta,
-        
-        # Styling
-        "primary_color": layout.primary_color,
-        "accent_color": layout.accent_color,
-        "font_heading": layout.font_heading,
-        "font_body": layout.font_body,
-        
-        # Images
-        "hero_image": images.get("hero", ""),
-        "about_image": images.get("about", ""),
-        
-        # Labels
-        "labels": labels,
-        
-        # Language
-        "language": language,
-        
-        # Meta
-        "meta_description": business.description[:160],
-        "current_year": datetime.now().year
-    }
-    
-    # Render each component
-    hero_section = env.get_template(f"heroes/{layout.hero_variant}.html").render(**base_context)
-    services_section = env.get_template(f"services/{layout.services_variant}.html").render(**base_context)
-    about_section = env.get_template(f"about/{layout.about_variant}.html").render(**base_context)
-    contact_section = env.get_template(f"contact/{layout.contact_variant}.html").render(**base_context)
-    footer_section = env.get_template(f"footer/{layout.footer_variant}.html").render(**base_context)
-    
-    # Assemble into base template
-    full_context = {
-        **base_context,
-        "hero_section": hero_section,
-        "services_section": services_section,
-        "about_section": about_section,
-        "contact_section": contact_section,
-        "footer_section": footer_section
-    }
-    
-    return env.get_template("base.html").render(**full_context)
+    from ..api.routes.generate_code import generate_website_code
+
+    # Create user prompt from business data
+    user_prompt = f"""
+Create a professional website for {business.business_name}, a {business.business_type} located in {business.location}.
+
+Business Description: {business.description}
+Services: {', '.join(business.services) if business.services else 'General services'}
+Tagline: {business.tagline}
+Call to Action: {business.cta}
+
+Make it modern, professional, and mobile-responsive. Include ALL mandatory sections.
+"""
+
+    # Use provided theme colors or defaults
+    colors = theme_colors or {"primary": "#0d9488", "accent": "#f97316"}
+
+    # Determine market based on inputs
+    market = "IN" if whatsapp_phone else "GLOBAL"
+
+    # Merge legacy images dict with new user_images list
+    image_list = user_images or []
+    if not image_list and images:
+        # Convert legacy dict to list
+        if images.get("hero"):
+            image_list.append(images["hero"])
+        if images.get("about"):
+            image_list.append(images["about"])
+
+    # Generate HTML directly using AI with validation
+    html, validation = generate_website_code(
+        user_prompt=user_prompt.strip(),
+        theme_colors=colors,
+        market=market,
+        user_images=image_list if image_list else None,
+        whatsapp_number=whatsapp_phone,
+        whatsapp_message=whatsapp_message,
+        google_map_link=google_map_link,
+        brand_voice=brand_voice,
+        booking_link=booking_link,
+        email=email,
+        business_type=business.business_type
+    )
+
+    # Log validation result
+    if not validation.get("valid"):
+        print(f"[Builder] Warning: Website validation found issues: {validation.get('missing_sections', [])}")
+
+    return html
 
 
 def build_website_sync(
     business: BusinessProfile,
-    layout: LayoutBlueprint,
+    layout: "LayoutBlueprint" = None,  # Kept for backward compatibility, ignored
     language: str = "en",
     images: Optional[Dict[str, str]] = None
 ) -> str:
     """
     Synchronous version of build_website for use in Celery tasks.
-    Uses fallback images instead of async Pexels API.
+    Uses direct AI code generation.
+
+    NOTE: The 'layout' parameter is DEPRECATED and ignored.
     """
-    env = get_jinja_env()
-    labels = get_labels(language)
-    
-    # Use fallback images if not provided
-    if images is None:
-        from ..services.pexels_service import FALLBACK_IMAGES
-        fallback = FALLBACK_IMAGES.get(business.business_type, FALLBACK_IMAGES["General Business"])
-        images = {
-            "hero": fallback.get("hero", ""),
-            "about": fallback.get("about", "")
-        }
-    
-    # Common context for all templates
-    base_context = {
-        # Business info
-        "business_name": business.business_name,
-        "business_type": business.business_type,
-        "business_icon": get_business_icon(business.business_type),
-        "location": business.location,
-        "tagline": business.tagline,
-        "description": business.description,
-        "services": business.services,
-        "cta": business.cta,
-        
-        # Styling
-        "primary_color": layout.primary_color,
-        "accent_color": layout.accent_color,
-        "font_heading": layout.font_heading,
-        "font_body": layout.font_body,
-        
-        # Images
-        "hero_image": images.get("hero", ""),
-        "about_image": images.get("about", ""),
-        
-        # Labels
-        "labels": labels,
-        
-        # Language
-        "language": language,
-        
-        # Meta
-        "meta_description": business.description[:160],
-        "current_year": datetime.now().year
-    }
-    
-    # Render each component
-    hero_section = env.get_template(f"heroes/{layout.hero_variant}.html").render(**base_context)
-    services_section = env.get_template(f"services/{layout.services_variant}.html").render(**base_context)
-    about_section = env.get_template(f"about/{layout.about_variant}.html").render(**base_context)
-    contact_section = env.get_template(f"contact/{layout.contact_variant}.html").render(**base_context)
-    footer_section = env.get_template(f"footer/{layout.footer_variant}.html").render(**base_context)
-    
-    # Assemble into base template
-    full_context = {
-        **base_context,
-        "hero_section": hero_section,
-        "services_section": services_section,
-        "about_section": about_section,
-        "contact_section": contact_section,
-        "footer_section": footer_section
-    }
-    
-    return env.get_template("base.html").render(**full_context)
+    from ..api.routes.generate_code import generate_website_code
+
+    # Create user prompt from business data
+    user_prompt = f"""
+Create a professional website for {business.business_name}, a {business.business_type} located in {business.location}.
+
+Business Description: {business.description}
+Services: {', '.join(business.services) if business.services else 'General services'}
+Tagline: {business.tagline}
+Call to Action: {business.cta}
+
+Make it modern, professional, and mobile-responsive. Include sections for hero, services, about, testimonials, and contact.
+"""
+
+    # Use default theme colors
+    colors = {"primary": "#0d9488", "accent": "#f97316"}
+
+    # Generate HTML directly using AI
+    html = generate_website_code(
+        user_prompt=user_prompt.strip(),
+        theme_colors=colors,
+        market="GLOBAL"
+    )
+
+    return html
+
 
 
 # ============================================
@@ -356,7 +332,7 @@ async def build_multipage_website(
     language: str = "en",
     images: Optional[Dict[str, str]] = None,
     website_id: Optional[str] = None,
-    api_url: str = "https://api.vocoweb.in",
+    api_url: str = "",
     popup_config: Optional[Dict[str, Any]] = None
 ) -> Dict[str, str]:
     """
@@ -441,8 +417,12 @@ async def build_multipage_website(
         "popup_trigger": popup_config.get("trigger_type", "time"),
         "popup_delay": popup_config.get("trigger_delay_seconds", 5),
         
-        # Meta
-        "meta_description": business.description[:160],
+        # Meta (SEO)
+        "seo": {
+            "title": business.seo.title if business.seo else f"{business.business_name} | {business.business_type}",
+            "description": business.seo.description if business.seo else business.description[:160],
+            "keywords": business.seo.keywords if business.seo else f"{business.business_type}, {business.location}",
+        },
         "current_year": datetime.now().year
     }
     
@@ -460,7 +440,7 @@ async def build_multipage_website(
         "footer_section": env.get_template(f"footer/{layout.footer_variant}.html").render(**base_context),
         "popup_section": env.get_template("forms/modal_popup.html").render(**base_context) if popup_config.get("enabled", True) else "",
     }
-    output_pages["index.html"] = env.get_template("base.html").render(**index_context)
+    output_pages["index.html"] = env.get_template("base_architect.html").render(**index_context)
     
     # Generate SERVICES.HTML
     services_context = {
@@ -483,7 +463,7 @@ async def build_multipage_website(
         "footer_section": env.get_template(f"footer/{layout.footer_variant}.html").render(**base_context),
         "popup_section": "",
     }
-    output_pages["services.html"] = env.get_template("base.html").render(**services_context)
+    output_pages["services.html"] = env.get_template("base_architect.html").render(**services_context)
     
     # Generate ABOUT.HTML
     about_context = {
@@ -506,7 +486,7 @@ async def build_multipage_website(
         "footer_section": env.get_template(f"footer/{layout.footer_variant}.html").render(**base_context),
         "popup_section": "",
     }
-    output_pages["about.html"] = env.get_template("base.html").render(**about_context)
+    output_pages["about.html"] = env.get_template("base_architect.html").render(**about_context)
     
     # Generate CONTACT.HTML
     contact_context = {
@@ -533,7 +513,7 @@ async def build_multipage_website(
         # Include inline form
         "inline_form": env.get_template("forms/inline_booking_form.html").render(**base_context),
     }
-    output_pages["contact.html"] = env.get_template("base.html").render(**contact_context)
+    output_pages["contact.html"] = env.get_template("base_architect.html").render(**contact_context)
     
     # Inject navigation script into all pages for multi-page preview
     for page_name in output_pages:
@@ -548,7 +528,7 @@ def build_multipage_website_sync(
     language: str = "en",
     images: Optional[Dict[str, str]] = None,
     website_id: Optional[str] = None,
-    api_url: str = "https://api.laxizen.fun",
+    api_url: str = "",
     popup_config: Optional[Dict[str, Any]] = None
 ) -> Dict[str, str]:
     """

@@ -112,8 +112,9 @@ class UpstashRateLimiter:
             Tuple of (is_limited, current_count, remaining)
         """
         if not self.is_configured():
-            # Fail open if not configured (development mode)
-            return False, 0, limit
+            # SECURITY: Fail closed if not configured
+            print("[RateLimit] Not configured - denying request")
+            return True, 0, 0
         
         try:
             now = int(time.time())
@@ -133,8 +134,8 @@ class UpstashRateLimiter:
             
         except Exception as e:
             print(f"Upstash rate limit error: {e}")
-            # Fail open on error
-            return False, 0, limit
+            # SECURITY: Fail closed on error - deny request
+            return True, 0, 0
     
     def check_action_limit(
         self, 
@@ -265,3 +266,36 @@ def check_rate_limit(user_id: str, action: str) -> Tuple[bool, str, int]:
         Tuple of (is_allowed, message, remaining)
     """
     return upstash_rate_limiter.check_action_limit(user_id, action)
+
+
+def check_ip_rate_limit(ip: str, action: str) -> Tuple[bool, str, int]:
+    """
+    Check rate limit for an IP address on unauthenticated endpoints.
+    SECURITY: VULN-M01 fix - IP-based rate limiting for public endpoints.
+    
+    Args:
+        ip: Client IP address
+        action: Action type (e.g., 'lead_submit', 'waitlist')
+    
+    Returns:
+        Tuple of (is_allowed, message, remaining)
+    """
+    # Use lower limits for IP-based rate limiting
+    IP_RATE_LIMITS = {
+        "lead_submit": {"limit": 10, "window": 3600},     # 10 per hour per IP
+        "waitlist": {"limit": 5, "window": 3600},         # 5 per hour per IP
+        "public_api": {"limit": 30, "window": 60},        # 30 per minute per IP
+    }
+    
+    config = IP_RATE_LIMITS.get(action, IP_RATE_LIMITS["public_api"])
+    limit = config["limit"]
+    window = config["window"]
+    
+    key = f"ip:{ip}:{action}"
+    is_limited, count, remaining = upstash_rate_limiter.is_rate_limited(key, limit, window)
+    
+    if is_limited:
+        window_name = upstash_rate_limiter._format_window(window)
+        return False, f"Too many requests. Try again in {window_name}.", 0
+    
+    return True, "OK", remaining

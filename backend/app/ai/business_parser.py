@@ -7,7 +7,13 @@ import json
 import os
 from typing import Optional
 from openai import OpenAI
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+class SEOData(BaseModel):
+    """SEO Metadata for the website."""
+    title: str
+    description: str
+    keywords: str
 
 
 class BusinessProfile(BaseModel):
@@ -19,7 +25,9 @@ class BusinessProfile(BaseModel):
     tone: str
     cta: str
     tagline: str
+    tagline: str
     description: str
+    seo: Optional[SEOData] = None
 
 
 SYSTEM_PROMPT = """You are a business information extraction assistant for an AI website builder.
@@ -33,7 +41,12 @@ Extract the following information and return as JSON:
 - tone: Either "Professional" or "Friendly" based on the business type
 - cta: Call-to-action text like "Book Appointment", "Order Now", "Contact Us", "Enroll Now"
 - tagline: A short catchy tagline for the business (max 10 words)
+- tagline: A short catchy tagline for the business (max 10 words)
 - description: A polished 2-3 sentence description for the website hero section
+- seo: Object containing:
+    - title: "{Business Name} | {Primary Service} in {Location}" (max 60 chars)
+    - description: Click-worthy description with keywords and CTA (max 160 chars)
+    - keywords: 5-8 comma-separated local keywords (e.g. "keyword 1, keyword 2")
 
 If information is not explicitly provided, make reasonable inferences based on the business type.
 Always respond with valid JSON only, no markdown formatting."""
@@ -42,7 +55,8 @@ Always respond with valid JSON only, no markdown formatting."""
 def parse_business_description(
     description: str, 
     language: str = "en",
-    api_key: Optional[str] = None
+    api_key: Optional[str] = None,
+    style_guide: Optional[str] = None
 ) -> BusinessProfile:
     """
     Parse unstructured business description into structured profile using OpenAI.
@@ -51,6 +65,7 @@ def parse_business_description(
         description: Raw text description from user
         language: 'en' or 'hi' for output language preference
         api_key: OpenAI API key (uses env var if not provided)
+        style_guide: Optional style guide to influence content generation
     
     Returns:
         BusinessProfile with extracted information
@@ -66,6 +81,11 @@ def parse_business_description(
     try:
         client = OpenAI(api_key=api_key)
         
+        # Build system prompt with optional style guide
+        system_prompt = SYSTEM_PROMPT
+        if style_guide:
+            system_prompt += f"\n\n{style_guide}\n\nApply these style guidelines to the description and tagline you generate."
+        
         user_prompt = f"""Business description (language: {language}):
 {description}
 
@@ -74,7 +94,7 @@ Extract the business information and return as JSON."""
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.3,
@@ -170,5 +190,10 @@ def _fallback_parser(description: str, language: str) -> BusinessProfile:
         tone="Friendly",
         cta=cta_map.get(business_type, "Contact Us"),
         tagline=f"Your Trusted {business_type} in {location}",
-        description=description
+        description=description,
+        seo=SEOData(
+            title=f"{business_name} | {business_type} in {location}",
+            description=f"Best {business_type} in {location}. {services[0] if services else ''} and more. {cta_map.get(business_type, 'Contact Us')} today!",
+            keywords=f"{business_type}, {location}, {services[0] if services else 'service'}, top {business_type}"
+        )
     )

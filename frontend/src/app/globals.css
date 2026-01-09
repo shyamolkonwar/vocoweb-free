@@ -885,13 +885,13 @@ button.desktop-only {
   padding: 1rem 2rem;
   font-size: 1.125rem;
   font-weight: 600;
-  color: var(--color-primary);
-  background: var(--color-text-inverse);
+  color: white;
+  background: var(--color-primary);
   border: none;
   border-radius: var(--radius-lg);
   cursor: pointer;
   transition: all var(--transition-normal);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 4px 14px rgba(6, 78, 59, 0.25);
   min-width: 200px;
   text-decoration: none;
 }
@@ -7692,4 +7692,692 @@ button.desktop-only {
   100% {
     opacity: 1;
   }
+}
+
+/* ========================================
+   VOICE LAB - BRAND VOICE TRAINING
+   ======================================== */
+
+.voice-lab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem;
+}
+
+.voice-lab-header {
+  margin-bottom: 1.5rem;
+}
+
+.voice-lab-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #fef3c7 0%, #fcd34d 100%);
+  border-radius: 1rem;
+  color: #92400e;
+}
+
+.voice-lab-icon.success {
+  background: linear-gradient(135deg, #dcfce7 0%, #86efac 100%);
+  color: #166534;
+}
+
+.voice-lab-title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.voice-lab-subtitle {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+  max-width: 400px;
+}
+
+/* Input Wrapper */
+.voice-lab-input-wrapper {
+  width: 100%;
+  max-width: 500px;
+  margin-bottom: 1rem;
+}
+
+.voice-lab-textarea {
+  width: 100%;
+  padding: 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 0.75rem;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  line-height: 1.6;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.voice-lab-textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.voice-lab-input-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.voice-lab-input-footer .char-count {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.voice-lab-input-footer .char-count.low {
+  color: #f59e0b;
+}
+
+.voice-lab-input-footer .char-count.ok {
+  color: #22c55e;
+}
+
+.voice-lab-error {
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+/* Actions */
+.voice-lab-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+.voice-lab-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.voice-lab-btn.primary {
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 12px rgba(6, 78, 59, 0.25);
+}
+
+.voice-lab-btn.primary:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+}
+
+.voice-lab-btn.primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.voice-lab-btn.ghost {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+}
+
+.voice-lab-btn.ghost:hover {
+  color: var(--color-text-primary);
+}
+
+/* Analyzing State */
+.voice-lab.analyzing {
+  padding: 3rem 2rem;
+}
+
+.voice-lab-loader {
+  margin-bottom: 2rem;
+}
+
+.voice-lab-loader .spinning {
+  animation: spin 1s linear infinite;
+  color: var(--color-primary);
+}
+
+.analysis-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: left;
+}
+
+.analysis-step {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9375rem;
+  color: var(--color-text-muted);
+  transition: all 0.3s;
+}
+
+.analysis-step.completed {
+  color: var(--color-primary);
+}
+
+.analysis-step.active {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.analysis-step .step-check {
+  color: var(--color-primary);
+}
+
+.analysis-step .step-pending {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 50%;
+}
+
+/* Confirmation State */
+.voice-lab.confirmed {
+  max-width: 100%;
+}
+
+.voice-profile-card {
+  width: 100%;
+  max-width: 450px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.profile-tone {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.profile-tone .tone-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.profile-tone .tone-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.profile-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.keyword-tag {
+  padding: 0.25rem 0.75rem;
+  background: #dcfce7;
+  color: #166534;
+  border-radius: 2rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.profile-section {
+  margin-bottom: 1rem;
+}
+
+.profile-section h4 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.profile-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.profile-section li {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  padding: 0.25rem 0;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.profile-section li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: var(--color-primary);
+}
+
+.profile-sample {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-style: italic;
+  color: var(--color-text-secondary);
+}
+
+.profile-sample svg {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+/* Voice Lab Modal Overlay */
+.voice-lab-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.voice-lab-modal {
+  position: relative;
+  background: white;
+  border-radius: 1.5rem;
+  max-width: 560px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.voice-lab-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.voice-lab-close:hover {
+  background: #f1f5f9;
+  color: var(--color-text-primary);
+}
+
+/* Voice Lab Toggle Button */
+.voice-lab-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  background: #fef3c7;
+  border: 1px dashed #f59e0b;
+  border-radius: 0.75rem;
+  color: #92400e;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.voice-lab-toggle:hover {
+  background: #fde68a;
+  border-style: solid;
+}
+
+.voice-lab-toggle.confirmed {
+  background: #dcfce7;
+  border: 1px solid #22c55e;
+  color: #166534;
+}
+
+.voice-lab-toggle .toggle-sparkle {
+  font-size: 1rem;
+}
+
+.voice-lab-toggle .toggle-check {
+  font-size: 0.875rem;
+}
+
+/* ========================================
+   WHATSAPP SETTINGS
+   ======================================== */
+
+.whatsapp-settings {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem;
+}
+
+.whatsapp-header {
+  margin-bottom: 1.5rem;
+}
+
+.whatsapp-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #dcfce7 0%, #86efac 100%);
+  border-radius: 1rem;
+  color: #166534;
+}
+
+.whatsapp-title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.whatsapp-subtitle {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+  max-width: 400px;
+}
+
+/* Form */
+.whatsapp-form {
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 1.5rem;
+}
+
+.whatsapp-form .form-group {
+  margin-bottom: 1.25rem;
+  text-align: left;
+}
+
+.whatsapp-form .form-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.whatsapp-input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.whatsapp-input:focus {
+  outline: none;
+  border-color: #25D366;
+}
+
+.whatsapp-input.error {
+  border-color: #ef4444;
+}
+
+.whatsapp-textarea {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 0.75rem;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  line-height: 1.5;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.whatsapp-textarea:focus {
+  outline: none;
+  border-color: #25D366;
+}
+
+.form-error-text {
+  font-size: 0.8125rem;
+  color: #ef4444;
+  margin-top: 0.375rem;
+}
+
+.form-hint {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-top: 0.375rem;
+}
+
+/* Message Preview */
+.message-preview {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.message-preview:hover {
+  border-color: #25D366;
+  background: #f0fdf4;
+}
+
+.message-preview .preview-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  margin-bottom: 0.375rem;
+}
+
+.message-preview .preview-text {
+  font-size: 0.9375rem;
+  color: var(--color-text-primary);
+  font-style: italic;
+}
+
+.message-preview .edit-hint {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  font-size: 0.6875rem;
+  color: #25D366;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.message-preview:hover .edit-hint {
+  opacity: 1;
+}
+
+/* Actions */
+.whatsapp-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+.whatsapp-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.whatsapp-btn.primary {
+  background: #25D366;
+  color: white;
+  border: none;
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+}
+
+.whatsapp-btn.primary:hover:not(:disabled) {
+  background: #20bd5a;
+  transform: translateY(-1px);
+}
+
+.whatsapp-btn.primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.whatsapp-btn.ghost {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+}
+
+.whatsapp-btn.ghost:hover {
+  color: var(--color-text-primary);
+}
+
+/* WhatsApp Settings Modal */
+.whatsapp-settings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.whatsapp-settings-modal {
+  position: relative;
+  background: white;
+  border-radius: 1.5rem;
+  max-width: 520px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.whatsapp-settings-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.whatsapp-settings-close:hover {
+  background: #f1f5f9;
+  color: var(--color-text-primary);
+}
+
+/* WhatsApp Toggle Button */
+.whatsapp-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  background: #dcfce7;
+  border: 1px dashed #22c55e;
+  border-radius: 0.75rem;
+  color: #166534;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.whatsapp-toggle:hover {
+  background: #bbf7d0;
+  border-style: solid;
+}
+
+.whatsapp-toggle.confirmed {
+  background: #dcfce7;
+  border: 1px solid #22c55e;
+  color: #166534;
+}
+
+.whatsapp-toggle .toggle-whatsapp {
+  font-size: 1rem;
+}
+
+/* Toggle Button Icons */
+.toggle-icon {
+  flex-shrink: 0;
+}
+
+.toggle-icon-img {
+  flex-shrink: 0;
+  object-fit: contain;
 }

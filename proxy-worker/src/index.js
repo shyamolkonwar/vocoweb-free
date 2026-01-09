@@ -12,7 +12,8 @@ export default {
         // Adjust '2' if you have a complex TLD like .co.uk (would be 3)
         if (parts.length <= 2 || parts[0] === 'www') {
             // Optional: Redirect root to your main landing page
-            return Response.redirect('https://vocoweb.in', 301);
+            // CHANGE THIS: Replace with your actual landing page URL
+            return Response.redirect('https://yourdomain.com', 301);
         }
 
         // Skip api-dev subdomain (handled by Cloudflare Tunnel)

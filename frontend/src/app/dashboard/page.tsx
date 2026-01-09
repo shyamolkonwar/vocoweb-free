@@ -72,14 +72,14 @@ function SiteCard({ website }: { website: any }) {
             {/* Info Area */}
             <div className="site-card-info">
                 <h3 className="site-card-title">{businessName}</h3>
-                {isLive && website.subdomain && (
+                {isLive && website.live_url && (
                     <a
-                        href={`https://${website.subdomain}.vocoweb.in`}
+                        href={website.live_url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="site-card-link"
                     >
-                        {website.subdomain}.vocoweb.in <ExternalLink size={12} />
+                        {website.live_url.replace(/^https?:\/\//, '')} <ExternalLink size={12} />
                     </a>
                 )}
                 {!isLive && (

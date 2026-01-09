@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="{{ language | default('en') }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ seo.title | default(business_name) }}</title>
+    <meta name="description" content="{{ seo.description | default(description) }}">
+    <meta name="keywords" content="{{ seo.keywords | default('') }}">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="{{ seo.title | default(business_name) }}">
+    <meta property="og:description" content="{{ seo.description | default(description) }}">
+    <meta property="og:type" content="website">
+    {% if hero_image %}
+    <meta property="og:image" content="{{ hero_image }}">
+    {% endif %}
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌐</text></svg>">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family={{ font_heading | replace(' ', '+') }}:wght@400;500;600;700;800;900&family={{ font_body | replace(' ', '+') }}:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '{{ primary_color }}',
+                        accent: '{{ accent_color }}'
+                    },
+                    fontFamily: {
+                        heading: ['{{ font_heading }}', 'sans-serif'],
+                        body: ['{{ font_body }}', 'sans-serif']
+                    },
+                    borderRadius: {
+                        'brand': '{{ border_radius }}'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* CSS Custom Properties for Design System */
+        :root {
+            --color-primary: {{ primary_color }};
+            --color-accent: {{ accent_color }};
+            --font-heading: "{{ font_heading }}", sans-serif;
+            --font-body: "{{ font_body }}", sans-serif;
+            --border-radius: {{ border_radius }};
+            --letter-spacing: {{ letter_spacing }};
+            --line-height: {{ line_height }};
+        }
+
+        body {
+            font-family: var(--font-body);
+            letter-spacing: var(--letter-spacing);
+            line-height: var(--line-height);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-family: var(--font-heading);
+        }
+
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: {{ primary_color }}40;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: {{ primary_color }}60;
+        }
+
+        /* Focus states */
+        *:focus-visible {
+            outline: 2px solid {{ primary_color }};
+            outline-offset: 2px;
+        }
+
+        /* Animation utilities */
+        .animate-fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Intersection Observer animations */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+
+<body class="bg-white text-gray-900 overflow-x-hidden">
+
+    <!-- Navigation -->
+    {{ nav_section | safe }}
+
+    <!-- Main Content -->
+    <main>
+        {{ main_content | safe }}
+    </main>
+
+    <!-- Footer -->
+    {{ footer_section | safe }}
+
+    <!-- Reveal Animation Script -->
+    <script>
+        // Intersection Observer for scroll animations
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        // Observe all reveal elements
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.reveal').forEach(el => {
+                observer.observe(el);
+            });
+        });
+    </script>
+
+    <!-- Preview Navigation Interceptor (for iframe preview) -->
+    <script>
+        (function () {
+            document.addEventListener('DOMContentLoaded', function () {
+                document.body.addEventListener('click', function (e) {
+                    var link = e.target.closest('a');
+                    if (link) {
+                        var href = link.getAttribute('href');
+                        if (!href) return;
+                        if (href.startsWith('http://') || href.startsWith('https://')) return;
+                        if (href.startsWith('#')) return;
+                        if (href.startsWith('tel:') || href.startsWith('mailto:')) return;
+                        if (href.startsWith('javascript:')) return;
+
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.parent.postMessage({
+                            type: 'NAVIGATE_PREVIEW',
+                            payload: href
+                        }, '*');
+                    }
+                }, true);
+            });
+        })();
+    </script>
+</body>
+
+</html>

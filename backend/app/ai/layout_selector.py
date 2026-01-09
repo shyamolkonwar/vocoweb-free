@@ -24,6 +24,11 @@ class LayoutBlueprint(BaseModel):
     theme: str  # 'light', 'dark', 'warm'
     style: str  # 'professional', 'friendly', 'luxury', 'trendy'
     
+    # Design Tokens (NEW - for modern UI)
+    border_radius: str = "0.5rem"  # Controls roundness of corners
+    letter_spacing: str = "normal"  # Typography spacing
+    line_height: str = "1.6"  # Text line height
+    
     # Section toggles (which sections to include)
     sections: List[str]
 
@@ -42,7 +47,10 @@ INDUSTRY_LAYOUTS: Dict[str, Dict[str, Any]] = {
         "font_heading": "Montserrat",
         "font_body": "Inter",
         "theme": "light",
-        "style": "professional"
+        "style": "professional",
+        "border_radius": "0.375rem",  # Subtle roundness
+        "letter_spacing": "-0.01em",   # Tight, professional
+        "line_height": "1.5"
     },
     "Medical Clinic": {
         "hero_variant": "hero_minimal_split",
@@ -56,7 +64,10 @@ INDUSTRY_LAYOUTS: Dict[str, Dict[str, Any]] = {
         "font_heading": "Plus Jakarta Sans",
         "font_body": "Inter",
         "theme": "light",
-        "style": "professional"
+        "style": "professional",
+        "border_radius": "0.25rem",  # Sharp, clinical
+        "letter_spacing": "-0.015em",
+        "line_height": "1.5"
     },
     "Bakery": {
         "hero_variant": "hero_glass_overlay",
@@ -70,7 +81,10 @@ INDUSTRY_LAYOUTS: Dict[str, Dict[str, Any]] = {
         "font_heading": "Playfair Display",
         "font_body": "Lato",
         "theme": "warm",
-        "style": "friendly"
+        "style": "friendly",
+        "border_radius": "1rem",      # Round, friendly
+        "letter_spacing": "normal",
+        "line_height": "1.65"
     },
     "Restaurant": {
         "hero_variant": "hero_glass_overlay",
@@ -84,7 +98,10 @@ INDUSTRY_LAYOUTS: Dict[str, Dict[str, Any]] = {
         "font_heading": "Cormorant Garamond",
         "font_body": "Lato",
         "theme": "dark",
-        "style": "luxury"
+        "style": "luxury",
+        "border_radius": "0rem",      # Sharp, luxury
+        "letter_spacing": "0.02em",   # Wide, elegant
+        "line_height": "1.4"
     },
     "Tuition Center": {
         "hero_variant": "hero_gradient_centered",
@@ -98,7 +115,10 @@ INDUSTRY_LAYOUTS: Dict[str, Dict[str, Any]] = {
         "font_heading": "Poppins",
         "font_body": "Open Sans",
         "theme": "light",
-        "style": "friendly"
+        "style": "friendly",
+        "border_radius": "0.75rem",   # Friendly rounded
+        "letter_spacing": "normal",
+        "line_height": "1.7"           # More readable for education
     },
     "Hardware Store": {
         "hero_variant": "hero_minimal_split",
@@ -112,7 +132,10 @@ INDUSTRY_LAYOUTS: Dict[str, Dict[str, Any]] = {
         "font_heading": "Roboto",
         "font_body": "Roboto",
         "theme": "light",
-        "style": "professional"
+        "style": "professional",
+        "border_radius": "0.25rem",   # Sharp, industrial
+        "letter_spacing": "-0.01em",
+        "line_height": "1.55"
     },
     "Salon": {
         "hero_variant": "hero_glass_overlay",
@@ -126,7 +149,10 @@ INDUSTRY_LAYOUTS: Dict[str, Dict[str, Any]] = {
         "font_heading": "Playfair Display",
         "font_body": "Nunito",
         "theme": "light",
-        "style": "luxury"
+        "style": "luxury",
+        "border_radius": "1.5rem",    # Very round, soft
+        "letter_spacing": "0.01em",   # Slightly wide
+        "line_height": "1.6"
     },
     "Grocery Store": {
         "hero_variant": "hero_gradient_centered",
@@ -140,7 +166,10 @@ INDUSTRY_LAYOUTS: Dict[str, Dict[str, Any]] = {
         "font_heading": "Nunito",
         "font_body": "Open Sans",
         "theme": "light",
-        "style": "friendly"
+        "style": "friendly",
+        "border_radius": "0.5rem",
+        "letter_spacing": "normal",
+        "line_height": "1.6"
     },
     "General Business": {
         "hero_variant": "hero_minimal_split",
@@ -154,7 +183,10 @@ INDUSTRY_LAYOUTS: Dict[str, Dict[str, Any]] = {
         "font_heading": "Inter",
         "font_body": "Inter",
         "theme": "light",
-        "style": "professional"
+        "style": "professional",
+        "border_radius": "0.5rem",    # Balanced
+        "letter_spacing": "normal",
+        "line_height": "1.6"
     }
 }
 

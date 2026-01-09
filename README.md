@@ -1,8 +1,8 @@
-# Vocoweb - AI Website Builder for Local Businesses
+# Vocoweb Free - Open Source AI Website Builder
 
-> **Build professional websites using voice or text in English or Hindi**
+> **The free & open-source version of [Vocoweb](https://vocoweb.com)**
 
-An AI-powered platform that enables non-technical local business owners to create, preview, and publish professional websites instantly using natural language.
+Build professional websites using voice or text in English or Hindi. This is the community-driven, open-source edition of the paid Vocoweb platform.
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-Latest-009688)](https://fastapi.tiangolo.com/)
@@ -14,64 +14,29 @@ An AI-powered platform that enables non-technical local business owners to creat
 
 ## 🚀 Features
 
-### ✅ Phase 1-2: Landing Page + Authentication
-- Mobile-first responsive landing page
-- Bilingual support (English/Hindi)
-- Google OAuth authentication via Supabase
-- Secure user dashboard
-- Row Level Security (RLS)
+### 🤖 AI Website Generation
+- **Text-to-Website**: Generate professional websites from a simple description.
+- **Bilingual Support**: Create websites using instructions in English or Hindi.
+- **Voice Input**: Describe your business using voice commands (OpenAI Whisper).
+- **Industry Templates**: Intelligent layout selection based on business type.
+- **Theme Variations**: Regenerate with different styles and color palettes.
 
-### ✅ Phase 3: AI Website Generation (Draft Mode)
-- Text-to-website using OpenAI GPT-3.5
-- Automatic business type detection
-- Industry-specific templates
-- Mobile/Desktop preview
-- Regenerate with theme variations
-- Celery async task processing
+### ⚡ Publishing & Performance
+- **Instant Publishing**: Deploy to the live web in one click via Cloudflare Pages.
+- **Global CDN**: Fast loading speeds worldwide.
+- **Custom Domains**: Automatic subdomain generation on your own domain (e.g., `*.yourdomain.com`).
+- **Mobile-First**: Fully responsive designs that look great on all devices.
 
-### ✅ Phase 4: Publishing Engine (Cloudflare Pages)
-- 1-click publish to Cloudflare Pages
-- Auto subdomain generation (`*.vocoweb.fun`)
-- Cloudflare Worker proxy for custom domain routing
-- SSL enabled automatically
-- Instant deployment via Wrangler CLI
-- Live URL generation
+### 🛡️ Security & Authentication
+- **Secure Login**: Google OAuth authentication.
+- **Row Level Security**: Data isolation ensuring users only see their own sites.
+- **Rate Limiting**: Protection against abuse using Upstash Redis.
+- **Credit System**: Usage tracking and quota management.
 
-### ✅ Phase 5: Voice Input + Regional Language
-- Voice recording interface
-- OpenAI Whisper integration
-- Hindi + English support
-- Voice-to-website pipeline
-- Audio processing via Celery
-
-### ✅ Phase 6: Website Editing + Redesign
-- Section-based editing
-- Redesign from existing URL
-- Web scraping and content extraction
-- Version history (planned)
-- Auto-save drafts
-
-### ✅ Phase 7: Credits & Abuse Control
-- Credit-based usage system
-- Free tier limits
-- Upstash Redis rate limiting
-- Abuse detection and blocking
-- Credit transaction logging
-- Usage limits tracking
-
-### ✅ Phase 8: Dashboard (Control Room)
-- User dashboard with stats
-- My Websites (all drafts and published)
-- Real-time credit balance
-- Website management (edit, preview, publish)
-- User profile with avatar dropdown
-- Login/Logout functionality
-
-### 🔜 Phase 9: Custom Domains + Payments (Planned)
-- Custom domain linking
-- Razorpay integration
-- Paid plans
-- Domain verification
+### 📊 Dashboard & Management
+- **Central Control**: Manage all your drafts and published sites in one place.
+- **Real-time Stats**: View credit usage and account status.
+- **Preview Mode**: Test your site on mobile, tablet, and desktop views before publishing.
 
 ---
 
@@ -121,8 +86,8 @@ An AI-powered platform that enables non-technical local business owners to creat
 ### 1. Clone the Repository
 
 ```bash
-git clone <your-repo-url>
-cd website-builder-fusion-focus
+git clone <https://github.com/shyamolkonwar/vocoweb-free.git>
+cd vocoweb-free
 ```
 
 ### 2. Backend Setup
@@ -146,7 +111,7 @@ cp .env.supabase.template .env
 # - CLOUDFLARE_ACCOUNT_ID
 # - CLOUDFLARE_API_TOKEN
 # - CLOUDFLARE_PAGES_PROJECT=user-websites
-# - BASE_DOMAIN=vocoweb.fun
+# - BASE_DOMAIN=yourdomain.com  # The root domain for published sites
 # - UPSTASH_REDIS_URL
 # - UPSTASH_REDIS_TOKEN
 ```
@@ -190,7 +155,7 @@ cd frontend
 npm install
 
 # Create .env.local
-echo "NEXT_PUBLIC_API_BASE_URL=https://api-dev.vocoweb.fun" > .env.local
+echo "NEXT_PUBLIC_API_BASE_URL=http://localhost:8000" > .env.local
 echo "NEXT_PUBLIC_SUPABASE_URL=<your-supabase-url>" >> .env.local
 echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>" >> .env.local
 ```
@@ -223,7 +188,7 @@ cloudflared tunnel run vocoweb-backend
 - **Create Website**: http://localhost:3000/create
 - **Dashboard**: http://localhost:3000/dashboard
 - **API Documentation**: http://localhost:8000/docs
-- **Published Sites**: https://*.vocoweb.fun (production)
+- **Published Sites**: `https://*.<your-domain>`
 
 ---
 
@@ -319,7 +284,7 @@ SUPABASE_JWT_SECRET=your-jwt-secret
 CLOUDFLARE_ACCOUNT_ID=your-account-id
 CLOUDFLARE_API_TOKEN=your-api-token
 CLOUDFLARE_PAGES_PROJECT=user-websites
-BASE_DOMAIN=vocoweb.fun
+BASE_DOMAIN=yourdomain.com # Your root domain (e.g., mysaas.com)
 
 # Upstash Redis (Rate Limiting)
 UPSTASH_REDIS_URL=https://...
@@ -337,7 +302,7 @@ DEBUG=false
 ### Frontend (`frontend/.env.local`)
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=https://api-dev.vocoweb.fun
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
@@ -423,41 +388,82 @@ wrangler deploy
 - Run migrations via SQL Editor
 - Enable RLS policies
 
----
-
-## 🗺️ Development Phases
-
-Based on `docs/phases.txt`:
-
-- ✅ **Phase 1**: Landing Page + Waitlist
-- ✅ **Phase 2**: Authentication (Google OAuth)
-- ✅ **Phase 3**: Text → Website Generation (Draft Mode)
-- ✅ **Phase 4**: Publishing Engine (Cloudflare Pages)
-- ✅ **Phase 5**: Voice Input + Regional Language
-- ✅ **Phase 6**: Website Editing + Redesign
-- ✅ **Phase 7**: Credits, Free Tier & Abuse Control
-- ✅ **Phase 8**: Dashboard (Control Room)
-- 🔜 **Phase 9**: Custom Domains + Payments (Planned)
 
 ---
 
-## 🤝 Collaboration
+## 🌐 Custom Domain Integration
 
-This is a **proprietary project** owned by **Shyamol Konwar**.
+VocoWeb is designed to work with your own custom domain (e.g., `yourdomain.com`). This uses Cloudflare for DNS, Pages (hosting), and Workers (routing).
 
-### Interested in Collaborating?
+### 1. DNS Configuration (Cloudflare)
+1. Add your domain to your Cloudflare account.
+2. Ensure your domain's nameservers are pointed to Cloudflare.
 
-Contact the owner before contributing:
-- GitHub: Create an issue with "Collaboration Request"
-- All contributions require prior approval
+### 2. Backend Configuration
+Update your `backend/.env` file:
+```env
+# The root domain where user sites will be accessible (e.g., sub.yourdomain.com)
+BASE_DOMAIN=yourdomain.com
+```
+
+### 3. Proxy Worker Setup
+The `proxy-worker` handles routing requests from `*.yourdomain.com` to the correct Cloudflare Pages deployment.
+
+1. **Edit `proxy-worker/wrangler.toml`**:
+   Update the `routes` section:
+   ```toml
+   routes = [
+     { pattern = "*.yourdomain.com/*", zone_name = "yourdomain.com" }
+   ]
+   ```
+
+2. **Edit `proxy-worker/src/index.js`**:
+   Update the root redirect (optional):
+   ```javascript
+   // Change 'https://yourdomain.com' to your main landing page URL
+   return Response.redirect('https://yourdomain.com', 301);
+   ```
+
+3. **Deploy the Worker**:
+   ```bash
+   cd proxy-worker
+   npm install
+   wrangler deploy
+   ```
+
+### 4. Verification
+Once deployed:
+1. Create a new website via the Dashboard.
+2. Publish it.
+3. The link should now be `https://<subdomain>.yourdomain.com`.
 
 ---
 
-## 📝 License & Copyright
 
-**Copyright © 2025 Shyamol Konwar. All Rights Reserved.**
 
-This project is proprietary software. See [LICENSE](./LICENSE) for full terms.
+---
+
+## 🤝 Contributing
+
+We welcome contributions to VocoWeb! This is an open-source project.
+
+### How to Contribute
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+Please make sure to update tests as appropriate.
+
+---
+
+## 📝 License
+
+Distributed under the MIT License. See [LICENSE](./LICENSE) for more information.
+
+Copyright (c) 2024 Shyamol Konwar.
 
 ---
 
@@ -470,7 +476,5 @@ This project is proprietary software. See [LICENSE](./LICENSE) for full terms.
 - **FastAPI** for the backend framework
 
 ---
-
-**Copyright © 2025 Shyamol Konwar. All Rights Reserved.**
 
 Built with ❤️ for local businesses in India

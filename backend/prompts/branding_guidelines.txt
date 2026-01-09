@@ -1,0 +1,190 @@
+=== VOCOWEB BRANDING GUIDELINES BY INDUSTRY ===
+
+This file contains design guidelines for different industry verticals.
+The AI should apply these guidelines based on the detected BUSINESS_TYPE.
+
+================================================================================
+HEALTHCARE (Dental, Medical, Clinics, Pharmacies)
+================================================================================
+VIBE: Trust, Clean, Professional
+PRIMARY COLORS: #0d9488 (Teal), #0891b2 (Cyan), #0284c7 (Blue)
+ACCENT COLORS: #f97316 (Orange for CTAs), #22c55e (Green for health)
+FONTS: 
+  - Heading: Inter (clean, professional)
+  - Body: Inter
+DESIGN PATTERNS:
+  - Clean white backgrounds with subtle gradients
+  - Rounded corners (rounded-xl) for approachability
+  - Trust badges prominently displayed
+  - Doctor/staff photos with professional backgrounds
+MUST INCLUDE:
+  - Certifications/Registrations
+  - Hygiene/Safety protocols
+  - Emergency contact numbers
+  - Operating hours prominently displayed
+
+================================================================================
+FOOD & HOSPITALITY (Restaurants, Cafes, Bakeries, Catering)
+================================================================================
+VIBE: Warm, Inviting, Appetizing
+PRIMARY COLORS: #f97316 (Orange), #dc2626 (Red), #ca8a04 (Golden)
+ACCENT COLORS: #16a34a (Fresh Green), #78350f (Brown)
+FONTS:
+  - Heading: Playfair Display (elegant, appetizing)
+  - Body: Inter
+DESIGN PATTERNS:
+  - Warm color gradients
+  - Large food photography (hero images)
+  - Menu-style layouts for offerings
+  - Testimonials about taste/experience
+MUST INCLUDE:
+  - Menu highlights with prices
+  - Delivery/Takeaway options
+  - Operating hours
+  - Location with delivery radius
+
+================================================================================
+TECH & SAAS (Software, IT Services, Digital Agencies)
+================================================================================
+VIBE: Modern, Minimal, Innovative
+PRIMARY COLORS: #6366f1 (Indigo), #8b5cf6 (Purple), #3b82f6 (Blue)
+ACCENT COLORS: #10b981 (Emerald), #f59e0b (Amber)
+FONTS:
+  - Heading: Inter (modern, clean)
+  - Body: Inter
+DESIGN PATTERNS:
+  - Dark mode option
+  - Gradient backgrounds (purple to blue)
+  - Bento grid layouts for features
+  - Glassmorphism effects (backdrop-blur)
+  - Animated elements
+MUST INCLUDE:
+  - Tech stack/capabilities
+  - Case studies or portfolio
+  - Integration logos
+  - Booking/Demo CTA
+
+================================================================================
+LUXURY & WELLNESS (Spas, Salons, Boutiques, Premium Services)
+================================================================================
+VIBE: Elegant, Premium, Relaxing
+PRIMARY COLORS: #0f172a (Dark Blue/Black), #78716c (Stone), #a16207 (Gold)
+ACCENT COLORS: #fbbf24 (Gold), #f5f5f4 (Off-white)
+FONTS:
+  - Heading: Playfair Display (serif, elegant)
+  - Body: Inter (light weight)
+DESIGN PATTERNS:
+  - Generous whitespace (py-24, py-32)
+  - Gold accents on dark backgrounds
+  - Large lifestyle imagery
+  - Subtle animations (fade, slide)
+  - Serif fonts for headlines
+MUST INCLUDE:
+  - Service menu with pricing tiers
+  - Ambiance photos
+  - Booking/Appointment system
+  - Gift card options (if applicable)
+
+================================================================================
+EDUCATION (Tuition, Coaching, Training, Schools)
+================================================================================
+VIBE: Friendly, Approachable, Trustworthy
+PRIMARY COLORS: #8b5cf6 (Purple), #0ea5e9 (Sky Blue), #10b981 (Green)
+ACCENT COLORS: #f59e0b (Amber), #ec4899 (Pink)
+FONTS:
+  - Heading: Inter (friendly weight)
+  - Body: Inter
+DESIGN PATTERNS:
+  - Bright, energetic colors
+  - Rounded elements (rounded-2xl)
+  - Student success stories
+  - Course/Program cards with details
+MUST INCLUDE:
+  - Courses/Subjects offered
+  - Faculty credentials
+  - Student testimonials/results
+  - Class timings
+  - Enrollment CTA
+
+================================================================================
+PROFESSIONAL SERVICES (Legal, Accounting, Consulting)
+================================================================================
+VIBE: Corporate, Trustworthy, Established
+PRIMARY COLORS: #1e3a5f (Navy), #0f766e (Teal), #4b5563 (Gray)
+ACCENT COLORS: #0284c7 (Blue), #059669 (Green)
+FONTS:
+  - Heading: Inter (medium weight, professional)
+  - Body: Inter
+DESIGN PATTERNS:
+  - Clean, structured layouts
+  - Minimal decoration
+  - Professional headshots
+  - Clean service listings
+MUST INCLUDE:
+  - Areas of expertise
+  - Credentials/Certifications
+  - Case outcomes (anonymized)
+  - Consultation booking
+
+================================================================================
+RETAIL & E-COMMERCE (Shops, Stores, Boutiques)
+================================================================================
+VIBE: Vibrant, Commercial, Product-focused
+PRIMARY COLORS: #dc2626 (Red), #ea580c (Orange), #0891b2 (Cyan)
+ACCENT COLORS: #fbbf24 (Gold for offers), #22c55e (Green for deals)
+FONTS:
+  - Heading: Inter (bold)
+  - Body: Inter
+DESIGN PATTERNS:
+  - Product showcase grids
+  - Sale/Offer banners
+  - Trust badges (secure, fast delivery)
+  - Customer reviews
+MUST INCLUDE:
+  - Product categories
+  - Prices and offers
+  - Delivery information
+  - Return policy mention
+  - Contact for bulk orders
+
+================================================================================
+FITNESS & SPORTS (Gyms, Yoga, Sports Academies)
+================================================================================
+VIBE: Energetic, Motivational, Dynamic
+PRIMARY COLORS: #dc2626 (Red), #ea580c (Orange), #0f172a (Dark)
+ACCENT COLORS: #22c55e (Green for health), #fbbf24 (Gold for premium)
+FONTS:
+  - Heading: Inter (extra bold, uppercase option)
+  - Body: Inter
+DESIGN PATTERNS:
+  - High-energy imagery
+  - Bold typography
+  - Before/After transformations
+  - Class schedules as grids
+MUST INCLUDE:
+  - Class/Training schedule
+  - Membership plans with pricing
+  - Trainer profiles
+  - Trial class offer
+  - Facility photos
+
+================================================================================
+DEFAULT (Fallback for unknown industries)
+================================================================================
+VIBE: Modern, Professional, Approachable
+PRIMARY COLORS: #0d9488 (Teal), #3b82f6 (Blue)
+ACCENT COLORS: #f97316 (Orange)
+FONTS:
+  - Heading: Inter
+  - Body: Inter
+DESIGN PATTERNS:
+  - Clean layouts
+  - Standard sections
+  - Balanced whitespace
+MUST INCLUDE:
+  - Clear value proposition
+  - Services/Offerings
+  - Contact information
+  - Social proof
+
+================================================================================

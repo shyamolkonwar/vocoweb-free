@@ -7,7 +7,7 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Header
 from pydantic import BaseModel, Field
 
 from app.ai import parse_business_description, select_layout
@@ -23,10 +23,39 @@ DATA_DIR = Path(__file__).parent.parent.parent / "data"
 WEBSITES_FILE = DATA_DIR / "websites.json"
 
 
+class VoiceProfile(BaseModel):
+    """Voice/style profile for content generation."""
+    tone_label: str = Field(default="Professional")
+    keywords: list[str] = Field(default_factory=list)
+    sentence_style: str = Field(default="Balanced")
+    vocabulary_level: str = Field(default="Moderate")
+    perspective: str = Field(default="First person (We/I)")
+    emoji_policy: str = Field(default="None")
+    rules: list[str] = Field(default_factory=list)
+    forbidden_words: list[str] = Field(default_factory=list)
+    sample_snippet: str = Field(default="")
+
+
 class GenerateRequest(BaseModel):
     """Request to generate a website."""
     description: str = Field(..., min_length=20, max_length=2000)
     language: str = Field(default="en", pattern="^(en|hi)$")
+    # Voice/Style profile (optional)
+    style_guide: str | None = Field(default=None, description="Pre-built style guide prompt")
+    voice_profile: VoiceProfile | None = Field(default=None, description="Structured voice profile")
+    # WhatsApp settings (India market)
+    whatsapp_number: str | None = Field(default=None, description="Cleaned WhatsApp number with country code")
+    whatsapp_message: str | None = Field(default=None, description="Pre-filled booking message")
+    whatsapp_enabled: bool = Field(default=False, description="Enable WhatsApp booking button")
+    # User-uploaded images (India market - upfront upload)
+    user_images: list[str] | None = Field(default=None, description="User-uploaded image URLs for Hero/About/Services (up to 3)")
+    google_map_link: str | None = Field(default=None, description="Google Maps embed link (India market)")
+    # Color theme
+    theme_id: str | None = Field(default=None, description="Color theme ID: trust, warmth, growth, modern, luxury")
+    # Global market fields (NEW)
+    brand_voice: str | None = Field(default=None, description="Brand voice: Bold & Confident, Empathetic & Soft, Corporate & Clean")
+    booking_link: str | None = Field(default=None, description="Calendly/Cal.com booking URL (Global market)")
+    email: str | None = Field(default=None, description="Contact email (Global market)")
 
 
 class GenerateResponse(BaseModel):
@@ -54,16 +83,49 @@ def load_websites() -> dict:
 
 
 def save_website(website_data: dict):
-    """Save website to storage."""
+    """
+    Save website to storage with file locking.
+    SECURITY: VULN-H04 fix - Atomic file operations to prevent race conditions.
+    """
+    import fcntl
+    ensure_data_dir()
+    
+    # Create file if doesn't exist
+    if not WEBSITES_FILE.exists():
+        WEBSITES_FILE.write_text("{}")
+    
+    with open(WEBSITES_FILE, 'r+') as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            websites = json.load(f)
+            websites[website_data["id"]] = website_data
+            f.seek(0)
+            f.truncate()
+            json.dump(websites, f, indent=2)
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
+
+
+def get_website_with_ownership(website_id: str, owner_id: str) -> dict | None:
+    """
+    Get website from local storage with ownership check.
+    SECURITY: VULN-H02 fix - Verify ownership even in dev mode.
+    """
     websites = load_websites()
-    websites[website_data["id"]] = website_data
-    WEBSITES_FILE.write_text(json.dumps(websites, indent=2))
+    website = websites.get(website_id)
+    if website:
+        # Check ownership - support both 'owner_id' and legacy data without it
+        stored_owner = website.get("owner_id")
+        if stored_owner is None or stored_owner == owner_id:
+            return website
+    return None
 
 
 @router.post("/generate", response_model=GenerateResponse)
 async def generate_website(
     request: GenerateRequest,
-    user: AuthUser = Depends(require_auth)
+    user: AuthUser = Depends(require_auth),
+    x_market: str = Header(default="GLOBAL", alias="x-market")  # Market header
 ):
     """
     Generate a website from text description (synchronous).
@@ -73,10 +135,18 @@ async def generate_website(
     2. Select layout (rules engine)
     3. Build HTML (template engine)
     4. Store to Supabase (production) or local JSON (dev)
+    
+    Market-aware:
+    - x-market: IN → Simpler hero, WhatsApp forced on, high-contrast theme
+    - x-market: GLOBAL → Brand voice enabled, modern-glass theme
     """
     from app.services.supabase import supabase_service
     
     settings = get_settings()
+    
+    # Normalize market to uppercase
+    market = x_market.upper() if x_market else "GLOBAL"
+    is_india_market = market == "IN"
     
     # Check rate limit
     is_allowed, message, remaining = check_rate_limit(user.user_id, "generate")
@@ -94,59 +164,97 @@ async def generate_website(
             )
     
     try:
-        # Step 1: Parse business description
+        # Step 1: Parse business description (with optional style guide)
         business = parse_business_description(
             request.description,
             request.language,
-            settings.openai_api_key
+            settings.openai_api_key,
+            style_guide=request.style_guide
         )
         
-        # Step 2: Select layout
-        layout = select_layout(business.business_type, business.tone)
+        # Step 2: Determine image availability
+        has_user_images = bool(request.user_images and len(request.user_images) > 0)
+        user_image_count = len(request.user_images) if request.user_images else 0
         
-        # Step 3: Build website (async with Pexels images)
-        html = await build_website(business, layout, request.language)
+        # Step 3: Build user images dict
+        user_images_dict = None
+        if has_user_images:
+            user_images_dict = {}
+            if len(request.user_images) > 0:
+                user_images_dict["hero"] = request.user_images[0]
+            if len(request.user_images) > 1:
+                user_images_dict["about"] = request.user_images[1]
         
-        # Step 4: Store website
-        website_id = f"site_{int(datetime.now().timestamp())}_{os.urandom(4).hex()}"
+        # Market-specific WhatsApp override
+        if is_india_market and request.whatsapp_number:
+            request.whatsapp_enabled = True
+        
+        # Step 4: Generate HTML using direct AI generation with dual-market support
+        html = await build_website(
+            business=business,
+            language=request.language,
+            images=user_images_dict,
+            theme_colors={"primary": "#0d9488", "accent": "#f97316"},
+            whatsapp_phone=request.whatsapp_number if request.whatsapp_enabled else None,
+            whatsapp_message=request.whatsapp_message,
+            # New dual-market parameters
+            user_images=request.user_images,
+            google_map_link=request.google_map_link,
+            brand_voice=request.brand_voice,
+            booking_link=request.booking_link,
+            email=request.email
+        )
+        
+        # Step 6: Store website
+        # SECURITY: Use UUID4 for cryptographically secure, unpredictable IDs
+        import uuid
+        website_id = f"site_{uuid.uuid4().hex}"
         
         # In production mode, save to Supabase
         if settings.is_production:
             try:
-                print(f"Saving website to Supabase for user {user.user_id}")
+                print(f"[Architect] Saving website to Supabase for user {user.user_id}")
                 website_record = await supabase_service.create_website(
                     owner_id=user.user_id,
                     data={
                         "status": "draft",
                         "business_json": business.model_dump(),
-                        "layout_json": layout.model_dump(),
+                        "layout_json": {
+                            "direct_ai_mode": True
+                        },
                         "html": html,
                         "description": request.description,
                         "language": request.language,
-                        "source_type": "text"
+                        "source_type": "text",
+                        # Voice profile
+                        "voice_profile": request.voice_profile.model_dump() if request.voice_profile else None,
+                        # WhatsApp settings
+                        "whatsapp_number": request.whatsapp_number,
+                        "whatsapp_message": request.whatsapp_message,
+                        "whatsapp_enabled": request.whatsapp_enabled
                     }
                 )
                 website_id = website_record["id"]
-                print(f"Website saved to Supabase: {website_id}")
+                print(f"[Architect] Website saved to Supabase: {website_id}")
                 
                 # Deduct credits after successful generation
                 await supabase_service.deduct_credits(
                     user.user_id, 
                     "generate", 
-                    f"Generated website: {business.business_name}"
+                    f"[Architect] Generated: {business.business_name}"
                 )
                 
                 # Track usage
                 await supabase_service.increment_usage_limit(user.user_id, "generate")
             except Exception as e:
-                print(f"ERROR saving to Supabase: {e}")
+                print(f"[Architect] ERROR saving to Supabase: {e}")
                 # Fallback to local storage
                 website_data = {
                     "id": website_id,
                     "description": request.description,
                     "language": request.language,
                     "business": business.model_dump(),
-                    "layout": layout.model_dump(),
+                    "layout_json": {"direct_ai_mode": True},
                     "html": html,
                     "created_at": datetime.now().isoformat(),
                     "updated_at": datetime.now().isoformat()
@@ -159,7 +267,7 @@ async def generate_website(
                 "description": request.description,
                 "language": request.language,
                 "business": business.model_dump(),
-                "layout": layout.model_dump(),
+                "layout_json": {"direct_ai_mode": True},
                 "html": html,
                 "created_at": datetime.now().isoformat(),
                 "updated_at": datetime.now().isoformat()
@@ -176,7 +284,9 @@ async def generate_website(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
+        # SECURITY: Log details internally, return generic error
+        print(f"[Generate] Error: {e}")
+        raise HTTPException(status_code=500, detail="Generation failed. Please try again.")
 
 
 class AsyncGenerateResponse(BaseModel):
@@ -248,8 +358,11 @@ async def generate_website_async(
 
 
 @router.get("/preview/{website_id}")
-async def get_preview(website_id: str):
-    """Get website preview by ID."""
+async def get_preview(
+    website_id: str,
+    user: AuthUser = Depends(require_auth)  # SECURITY: Require auth
+):
+    """Get website preview by ID (authenticated)."""
     from app.services.supabase import supabase_service
     import uuid as uuid_module
     
@@ -265,7 +378,8 @@ async def get_preview(website_id: str):
     if is_uuid:
         settings = get_settings()
         if settings.is_production:
-            website = await supabase_service.get_website(website_id)
+            # SECURITY: VULN-H01 fix - Verify ownership
+            website = await supabase_service.get_website(website_id, owner_id=user.id)
             if website:
                 return {
                     "id": website_id,
@@ -274,21 +388,24 @@ async def get_preview(website_id: str):
                 }
     
     # Fallback to local JSON storage
-    websites = load_websites()
+    # SECURITY: VULN-H02 fix - Verify ownership in dev mode too
+    website = get_website_with_ownership(website_id, user.id)
     
-    if website_id not in websites:
+    if not website:
         raise HTTPException(status_code=404, detail="Website not found")
     
-    website = websites[website_id]
     return {
         "id": website_id,
-        "html": website["html"],
-        "business": website["business"]
+        "html": website.get("html", ""),
+        "business": website.get("business", {})
     }
 
 
 @router.post("/regenerate/{website_id}")
-async def regenerate_website(website_id: str):
+async def regenerate_website(
+    website_id: str,
+    user: AuthUser = Depends(require_auth)  # SECURITY: Require auth
+):
     """Regenerate website with new styling."""
     settings = get_settings()
     websites = load_websites()

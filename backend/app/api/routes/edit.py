@@ -5,7 +5,7 @@ Handles section-based website editing via text or voice.
 
 import json
 from datetime import datetime
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from typing import Optional, Literal
 
@@ -15,6 +15,7 @@ from app.website import build_website
 from app.ai.layout_selector import LayoutBlueprint
 from app.ai.business_parser import BusinessProfile
 from app.core.config import get_settings
+from app.core.auth_middleware import require_auth, AuthUser
 
 router = APIRouter()
 
@@ -63,7 +64,10 @@ SECTION_DEFINITIONS = {
 
 
 @router.get("/edit/{website_id}/sections")
-async def get_editable_sections(website_id: str):
+async def get_editable_sections(
+    website_id: str,
+    user: AuthUser = Depends(require_auth)  # SECURITY: Require auth
+):
     """Get list of editable sections with current content."""
     websites = load_websites()
     
@@ -95,7 +99,11 @@ async def get_editable_sections(website_id: str):
 
 
 @router.patch("/edit/{website_id}/section")
-async def edit_section(website_id: str, request: SectionEditRequest):
+async def edit_section(
+    website_id: str, 
+    request: SectionEditRequest,
+    user: AuthUser = Depends(require_auth)  # SECURITY: Require auth
+):
     """
     Edit a specific section of the website.
     
@@ -149,7 +157,8 @@ async def edit_section(website_id: str, request: SectionEditRequest):
         )
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Edit failed: {str(e)}")
+        print(f"Edit section error: {e}")  # SECURITY: Log internally
+        raise HTTPException(status_code=500, detail="Edit failed. Please try again.")
 
 
 def _update_section(
@@ -218,10 +227,27 @@ Keep other fields unchanged. Return valid JSON only:
 
 
 @router.post("/edit/{website_id}/quick")
-async def quick_edit(website_id: str, field: str, value: str):
+async def quick_edit(
+    website_id: str, 
+    field: str, 
+    value: str,
+    user: AuthUser = Depends(require_auth)  # SECURITY: VULN-01 fix - Require auth
+):
     """
     Quick edit a single field without AI processing.
+    Requires authentication and ownership verification.
     """
+    from app.services import supabase_service
+    from app.core.config import get_settings
+    
+    settings = get_settings()
+    
+    # SECURITY: Verify ownership in production
+    if settings.is_production:
+        website = await supabase_service.get_website(website_id, user.id)
+        if not website:
+            raise HTTPException(status_code=404, detail="Website not found or access denied")
+    
     websites = load_websites()
     
     if website_id not in websites:
@@ -255,7 +281,112 @@ async def quick_edit(website_id: str, field: str, value: str):
         return {"success": True, "field": field, "html": html}
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Quick edit failed: {str(e)}")
+        print(f"Quick edit error: {e}")  # SECURITY: Log internally
+        raise HTTPException(status_code=500, detail="Quick edit failed. Please try again.")
+
+
+class ThemeUpdateRequest(BaseModel):
+    """Request to update website color theme."""
+    theme_id: str = Field(..., pattern="^(trust|warmth|growth|modern|luxury)$")
+
+
+@router.post("/edit/{website_id}/theme")
+async def update_theme(
+    website_id: str, 
+    request: ThemeUpdateRequest,
+    user: AuthUser = Depends(require_auth)
+):
+    """
+    Update the color theme of the website.
+    Rebuilds the entire website with the new color palette.
+    Requires authentication and ownership verification.
+    """
+    from app.services.theme_service import get_theme
+    from app.services import supabase_service
+    
+    settings = get_settings()
+    
+    try:
+        # Get website from Supabase (production) or local file (dev)
+        # In production, verify owner_id matches authenticated user
+        website = None
+        
+        if settings.is_production:
+            website = await supabase_service.get_website(website_id, owner_id=user.id)
+            if not website:
+                raise HTTPException(status_code=404, detail="Website not found or access denied")
+        else:
+            websites = load_websites()
+            if website_id in websites:
+                website = websites[website_id]
+            if not website:
+                raise HTTPException(status_code=404, detail="Website not found")
+        
+        # Extract data from website record
+        # Supabase stores in content_data, local stores differently
+        if settings.is_production:
+            content_data = website.get("content_data", {})
+            print(f"DEBUG: content_data keys: {content_data.keys() if content_data else 'None'}")
+            business_data = content_data.get("business_json", {})
+            layout_data = content_data.get("layout_json", {})
+            language = content_data.get("language", "en")
+            whatsapp_phone = content_data.get("whatsapp_number")
+            whatsapp_message = content_data.get("whatsapp_message")
+            print(f"DEBUG: business_data keys: {business_data.keys() if business_data else 'None'}")
+        else:
+            business_data = website.get("business", {})
+            layout_data = website.get("layout", {})
+            language = website.get("language", "en")
+            whatsapp_phone = website.get("whatsapp_number")
+            whatsapp_message = website.get("whatsapp_message")
+        
+        # Create style guide for Architect Agent based on theme
+        theme_info = get_theme(request.theme_id, "GLOBAL")
+        style_guide = f"Use a {theme_info['name'].lower()} design with {theme_info['primary']} primary color and {theme_info['accent']} accent color. {theme_info['description']}"
+
+        # Recreate objects
+        business = BusinessProfile(**business_data)
+        layout = LayoutBlueprint(**layout_data)
+
+        # Rebuild website with new theme via Architect Agent
+        html = await build_website(
+            business,
+            layout,
+            language,
+            style_guide=style_guide,
+            whatsapp_phone=whatsapp_phone,
+            whatsapp_message=whatsapp_message
+        )
+        
+        # Update storage
+        if settings.is_production:
+            # Update via Supabase
+            await supabase_service.update_website_html(
+                website_id=website_id,
+                owner_id=user.id,  # SECURITY: Verify ownership
+                html=html,
+                page="index.html"
+            )
+        else:
+            # Update local storage
+            if "theme" not in website:
+                website["theme"] = {}
+            website["theme"]["theme_id"] = request.theme_id
+            website["html"] = html
+            website["updated_at"] = datetime.now().isoformat()
+            save_website(website)
+        
+        return {
+            "success": True, 
+            "theme_id": request.theme_id, 
+            "html": html
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Theme update error: {e}")  # SECURITY: Log internally
+        raise HTTPException(status_code=500, detail="Theme update failed. Please try again.")
 
 
 class HtmlSaveRequest(BaseModel):
@@ -265,49 +396,46 @@ class HtmlSaveRequest(BaseModel):
 
 
 @router.put("/edit/{website_id}/html")
-async def save_html(website_id: str, request: HtmlSaveRequest):
+async def save_html(
+    website_id: str, 
+    request: HtmlSaveRequest,
+    user: AuthUser = Depends(require_auth)
+):
     """
     Save full HTML content from the visual editor.
     This is called when user makes inline edits in the WYSIWYG editor.
+    Uses Supabase to persist the changes.
+    Requires authentication and ownership verification.
     """
-    websites = load_websites()
-    
-    if website_id not in websites:
-        raise HTTPException(status_code=404, detail="Website not found")
-    
-    website = websites[website_id]
+    from app.services import supabase_service
     
     try:
-        # Clean the HTML (remove editor artifacts like data-lid, lx-selected, etc.)
-        cleaned_html = _clean_editor_html(request.html)
+        # Check if website exists and user owns it
+        website = await supabase_service.get_website(website_id, owner_id=user.id)
+        if not website:
+            raise HTTPException(status_code=404, detail="Website not found or access denied")
         
-        # Save HTML
-        if request.page == "index.html" or not website.get("pages"):
-            # Single-page website: save to html field
-            website["html"] = cleaned_html
+        # Update HTML using Supabase service
+        result = await supabase_service.update_website_html(
+            website_id=website_id,
+            owner_id=user.id,  # SECURITY: Verify ownership
+            html=request.html,
+            page=request.page
+        )
+        
+        if result:
+            return {
+                "success": True,
+                "page": request.page,
+                "updated_at": result.get("updated_at")
+            }
         else:
-            # Multi-page: save to the specific page
-            if "pages" not in website:
-                website["pages"] = {}
-            website["pages"][request.page] = cleaned_html
+            raise HTTPException(status_code=500, detail="Failed to save - no result returned")
         
-        website["updated_at"] = datetime.now().isoformat()
-        website["edit_history"] = website.get("edit_history", [])
-        website["edit_history"].append({
-            "type": "visual_edit",
-            "page": request.page,
-            "timestamp": datetime.now().isoformat()
-        })
-        
-        save_website(website)
-        
-        return {
-            "success": True,
-            "page": request.page,
-            "updated_at": website["updated_at"]
-        }
-        
+    except HTTPException:
+        raise
     except Exception as e:
+        print(f"Save HTML error: {e}")
         raise HTTPException(status_code=500, detail=f"Save failed: {str(e)}")
 
 

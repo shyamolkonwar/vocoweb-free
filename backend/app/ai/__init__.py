@@ -24,4 +24,3 @@ __all__ = [
     "create_business_profile_from_extraction",
     "ExtractedBusiness"
 ]
-

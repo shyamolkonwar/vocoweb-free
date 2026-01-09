@@ -1,0 +1,100 @@
+<!-- Hero_Split_Classic -->
+<!-- 50/50 split: Text Left (Headline, Subhead, 2 Buttons), Image Right (rounded/blob) -->
+<!-- Best for: Consultants, Dentists, SaaS, Plumbers (People-focused businesses) -->
+<!-- Variables: headline, subheadline, cta_primary, cta_secondary, hero_image, primary_color, accent_color -->
+
+<section class="min-h-screen flex items-center py-20 bg-gradient-to-br from-gray-50 to-white">
+    <div class="max-w-7xl mx-auto px-6 w-full">
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <!-- Left: Text Content -->
+            <div class="order-2 lg:order-1">
+                <div class="space-y-6">
+                    <!-- Badge (optional) -->
+                    {% if badge_text %}
+                    <div
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 text-sm font-medium">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        {{ badge_text }}
+                    </div>
+                    {% endif %}
+
+                    <!-- Headline -->
+                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
+                        {{ headline | default("Transform Your Business Today") }}
+                    </h1>
+
+                    <!-- Subheadline -->
+                    <p class="text-lg md:text-xl text-gray-600 leading-relaxed max-w-xl">
+                        {{ subheadline | default("We help businesses grow with proven strategies and dedicated support.
+                        Let's build something amazing together.") }}
+                    </p>
+
+                    <!-- Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-4 pt-4">
+                        <a href="#contact"
+                            class="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:scale-105 transition-all duration-300"
+                            style="background: {{ primary_color }};">
+                            {{ cta_primary | default("Get Started") }}
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                            </svg>
+                        </a>
+                        {% if cta_secondary %}
+                        <a href="#services"
+                            class="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold text-gray-700 bg-white border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-300">
+                            {{ cta_secondary }}
+                        </a>
+                        {% endif %}
+                    </div>
+
+                    <!-- Trust indicators -->
+                    {% if trust_text %}
+                    <div class="flex items-center gap-4 pt-6 text-sm text-gray-500">
+                        <div class="flex -space-x-2">
+                            <div class="w-8 h-8 rounded-full bg-gray-200 border-2 border-white"></div>
+                            <div class="w-8 h-8 rounded-full bg-gray-300 border-2 border-white"></div>
+                            <div class="w-8 h-8 rounded-full bg-gray-400 border-2 border-white"></div>
+                        </div>
+                        <span>{{ trust_text }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Right: Image -->
+            <div class="order-1 lg:order-2 relative">
+                <div class="relative">
+                    <!-- Decorative blob behind image -->
+                    <div class="absolute -inset-4 rounded-[3rem] opacity-20 blur-3xl"
+                        style="background: linear-gradient(135deg, {{ primary_color }}, {{ accent_color | default(primary_color) }});">
+                    </div>
+
+                    <!-- Main image -->
+                    <div class="relative rounded-[2rem] overflow-hidden shadow-2xl">
+                        {% if hero_image %}
+                        <img src="{{ hero_image }}" alt="{{ headline }}"
+                            class="w-full aspect-[4/5] lg:aspect-square object-cover">
+                        {% else %}
+                        <div
+                            class="w-full aspect-[4/5] lg:aspect-square bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                            <svg class="w-24 h-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Floating stat card -->
+                    {% if stat_number %}
+                    <div class="absolute -bottom-6 -left-6 bg-white rounded-2xl shadow-xl p-4 border border-gray-100">
+                        <div class="text-3xl font-bold" style="color: {{ primary_color }};">{{ stat_number }}</div>
+                        <div class="text-sm text-gray-500">{{ stat_label | default("Happy Clients") }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

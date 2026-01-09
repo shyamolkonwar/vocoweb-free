@@ -137,10 +137,11 @@ class CloudflareService:
                 with open(site_path, "w", encoding="utf-8") as f:
                     f.write(html_content)
                 
-                # Prepare environment for wrangler
+                # MEDIUM-006: Use config-based credentials (already from env vars)
+                # Subprocess inherits env from config, no plaintext secrets in logs
                 env = os.environ.copy()
                 env["CLOUDFLARE_ACCOUNT_ID"] = self.account_id
-                env["CLOUDFLARE_API_TOKEN"] = self.api_token
+                env["CLOUDFLARE_API_TOKEN"] = self.api_token  # From settings, not logged
                 
                 # Construct wrangler command
                 # Deploy to a branch named after the subdomain

@@ -1,34 +1,21 @@
 'use client';
 
-import { useState } from 'react';
-import Header from '@/components/Header';
-import Hero from '@/components/Hero';
-import RealityCheck from '@/components/RealityCheck';
-import UseCasesTicker from '@/components/UseCasesTicker';
-import BentoFeatures from '@/components/BentoFeatures';
-import VersusComparison from '@/components/VersusComparison';
-import UseCaseCarousel from '@/components/UseCaseCarousel';
-import BetaPricing from '@/components/BetaPricing';
-import FAQ from '@/components/FAQ';
-import Footer from '@/components/Footer';
+/**
+ * Root Page (/)
+ * 
+ * This page should never actually render in production.
+ * The middleware automatically redirects to /in or /en based on user location.
+ * 
+ * This is just a fallback loading state.
+ */
 
 export default function Home() {
-  const [language, setLanguage] = useState<'en' | 'hi'>('en');
-
   return (
-    <div className="app">
-      <Header language={language} setLanguage={setLanguage} />
-      <main>
-        <Hero language={language} />
-        <RealityCheck />
-        <UseCasesTicker />
-        <BentoFeatures />
-        <VersusComparison />
-        <UseCaseCarousel />
-        <BetaPricing />
-        <FAQ />
-      </main>
-      <Footer language={language} />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
+      <div className="text-center">
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mb-4"></div>
+        <p className="text-gray-600">Redirecting...</p>
+      </div>
     </div>
   );
 }

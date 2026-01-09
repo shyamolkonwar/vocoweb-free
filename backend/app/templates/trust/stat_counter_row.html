@@ -1,0 +1,63 @@
+<!-- Stat_Counter_Row -->
+<!-- Simple strip with 3-4 big numbers: "10 Years", "500 Projects", "5 Star Rating" -->
+<!-- Best for: Construction, Real Estate, Law -->
+<!-- Variables: stats[], primary_color, bg_color -->
+
+<section class="py-16" style="background: {{ bg_color | default('#f8fafc') }};">
+    <div class="max-w-7xl mx-auto px-6">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+            {% for stat in stats %}
+            <div class="text-center">
+                <!-- Number -->
+                <div class="text-4xl md:text-5xl font-bold mb-2" style="color: {{ primary_color }};">
+                    {% if stat.prefix %}{{ stat.prefix }}{% endif %}
+                    <span class="counter" data-target="{{ stat.number }}">{{ stat.number }}</span>
+                    {% if stat.suffix %}{{ stat.suffix }}{% endif %}
+                </div>
+
+                <!-- Label -->
+                <p class="text-gray-600 font-medium">
+                    {{ stat.label }}
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<script>
+    // Animate counters on scroll
+    const observerOptions = { threshold: 0.5 };
+    const counters = document.querySelectorAll('.counter');
+
+    const animateCounter = (counter) => {
+        const target = parseInt(counter.dataset.target);
+        const duration = 2000;
+        const step = target / (duration / 16);
+        let current = 0;
+
+        const updateCounter = () => {
+            current += step;
+            if (current < target) {
+                counter.textContent = Math.floor(current);
+                requestAnimationFrame(updateCounter);
+            } else {
+                counter.textContent = target;
+            }
+        };
+
+        updateCounter();
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const counter = entry.target;
+                animateCounter(counter);
+                observer.unobserve(counter);
+            }
+        });
+    }, observerOptions);
+
+    counters.forEach(counter => observer.observe(counter));
+</script>

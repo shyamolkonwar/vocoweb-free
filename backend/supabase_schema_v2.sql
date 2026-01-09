@@ -298,6 +298,7 @@ CREATE OR REPLACE FUNCTION deduct_credits(
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public  -- SECURITY: Prevent search_path hijacking (DB-VULN-01 fix)
 AS $$
 DECLARE
   v_current_balance INT;
@@ -305,7 +306,7 @@ DECLARE
 BEGIN
   -- Get current balance
   SELECT balance INTO v_current_balance
-  FROM credits
+  FROM public.credits
   WHERE user_id = p_user_id
   FOR UPDATE;
   
@@ -318,14 +319,14 @@ BEGIN
   v_new_balance := v_current_balance - p_amount;
   
   -- Update credits
-  UPDATE credits
+  UPDATE public.credits
   SET balance = v_new_balance,
       lifetime_spent = lifetime_spent + p_amount,
       updated_at = NOW()
   WHERE user_id = p_user_id;
   
   -- Log transaction
-  INSERT INTO credit_transactions (user_id, amount, balance_after, action, description)
+  INSERT INTO public.credit_transactions (user_id, amount, balance_after, action, description)
   VALUES (p_user_id, -p_amount, v_new_balance, p_action, p_description);
   
   RETURN TRUE;

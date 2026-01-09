@@ -1,0 +1,84 @@
+<!-- Menu_Price_List -->
+<!-- Two columns: Item Name (left) ........... Price (right) -->
+<!-- Dotted line connecting them, no images -->
+<!-- Best for: Salons, Restaurants, Spas, Repair Shops -->
+<!-- Variables: section_title, categories[], primary_color -->
+
+<section id="menu" class="py-20 bg-white">
+    <div class="max-w-4xl mx-auto px-6">
+        <!-- Section Header -->
+        <div class="text-center mb-16">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                {{ section_title | default("Our Services & Pricing") }}
+            </h2>
+            <p class="text-lg text-gray-600">
+                {{ section_subtitle | default("Transparent pricing for all our services.") }}
+            </p>
+        </div>
+
+        <!-- Menu Categories -->
+        <div class="space-y-12">
+            {% for category in categories %}
+            <div>
+                <!-- Category Title -->
+                <div class="mb-6 pb-3 border-b-2" style="border-color: {{ primary_color }};">
+                    <h3 class="text-xl font-bold text-gray-900">{{ category.name }}</h3>
+                    {% if category.description %}
+                    <p class="text-gray-500 text-sm mt-1">{{ category.description }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Menu Items -->
+                <div class="space-y-4">
+                    {% for item in category.items %}
+                    <div class="flex items-baseline gap-2">
+                        <!-- Item Name -->
+                        <div class="flex-shrink-0">
+                            <span class="text-gray-900 font-medium">{{ item.name }}</span>
+                            {% if item.note %}
+                            <span class="text-gray-400 text-sm ml-2">{{ item.note }}</span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Dotted Line -->
+                        <div class="flex-grow border-b-2 border-dotted border-gray-200 mx-2 relative -top-1"></div>
+
+                        <!-- Price -->
+                        <div class="flex-shrink-0 font-semibold" style="color: {{ primary_color }};">
+                            {% if item.price_from %}
+                            <span class="text-gray-400 text-sm font-normal">from </span>
+                            {% endif %}
+                            {{ item.price }}
+                        </div>
+                    </div>
+
+                    {% if item.description %}
+                    <p class="text-gray-500 text-sm -mt-2 ml-0">{{ item.description }}</p>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Optional Note -->
+        {% if footer_note %}
+        <div class="mt-12 p-6 rounded-2xl bg-gray-50 text-center">
+            <p class="text-gray-600 text-sm">{{ footer_note }}</p>
+        </div>
+        {% endif %}
+
+        <!-- CTA -->
+        <div class="mt-12 text-center">
+            <a href="#contact"
+                class="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+                style="background: {{ primary_color }};">
+                {{ cta_text | default("Book an Appointment") }}
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+            </a>
+        </div>
+    </div>
+</section>

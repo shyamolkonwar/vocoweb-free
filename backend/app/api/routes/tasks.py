@@ -9,6 +9,8 @@ from typing import Optional, Any
 from celery.result import AsyncResult
 
 from app.core.celery_app import celery_app
+from app.core.auth_middleware import require_auth, AuthUser
+from fastapi import Depends
 
 router = APIRouter()
 
@@ -25,7 +27,10 @@ class TaskStatus(BaseModel):
 
 
 @router.get("/tasks/{task_id}", response_model=TaskStatus)
-async def get_task_status(task_id: str):
+async def get_task_status(
+    task_id: str,
+    user: AuthUser = Depends(require_auth)  # SECURITY: VULN-03 fix
+):
     """
     Get the status of an async task.
     
@@ -83,7 +88,10 @@ async def get_task_status(task_id: str):
 
 
 @router.delete("/tasks/{task_id}")
-async def cancel_task(task_id: str):
+async def cancel_task(
+    task_id: str,
+    user: AuthUser = Depends(require_auth)  # SECURITY: VULN-03 fix
+):
     """
     Cancel/revoke a pending or running task.
     """

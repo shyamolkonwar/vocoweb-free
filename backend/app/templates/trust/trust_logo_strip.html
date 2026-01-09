@@ -1,0 +1,29 @@
+<!-- Trust_Logo_Strip -->
+<!-- Low-height grey bar with 5-6 partner/brand logos in grayscale -->
+<!-- Best for: B2B Services, Contractors using famous brands -->
+<!-- Variables: title, logos[] -->
+
+<section class="py-12 bg-gray-50 border-y border-gray-100">
+    <div class="max-w-7xl mx-auto px-6">
+        <!-- Optional Title -->
+        {% if title %}
+        <p class="text-center text-sm text-gray-400 uppercase tracking-wider mb-8">
+            {{ title }}
+        </p>
+        {% endif %}
+
+        <!-- Logo Strip -->
+        <div class="flex flex-wrap items-center justify-center gap-8 md:gap-12 lg:gap-16">
+            {% for logo in logos %}
+            <div
+                class="flex items-center justify-center opacity-50 hover:opacity-100 transition-opacity duration-300 grayscale hover:grayscale-0">
+                {% if logo.image %}
+                <img src="{{ logo.image }}" alt="{{ logo.name }}" class="h-8 md:h-10 w-auto object-contain">
+                {% else %}
+                <span class="text-lg font-bold text-gray-400">{{ logo.name }}</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>

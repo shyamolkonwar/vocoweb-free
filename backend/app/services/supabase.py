@@ -16,7 +16,7 @@ CREDIT_COSTS = {
     "voice_generate": 15,
     "edit": 2,
     "redesign": 20,
-    "publish": 5,
+    "publish": 30,  # Increased from 5 to create paywall (signup bonus = 25)
 }
 
 
@@ -307,6 +307,105 @@ class SupabaseService:
         
         updates["updated_at"] = datetime.utcnow().isoformat()
         
+        response = self.client.table("websites")\
+            .update(updates)\
+            .eq("id", website_id)\
+            .eq("owner_id", owner_id)\
+            .execute()
+        
+        if response.data:
+            return response.data[0]
+        return None
+    
+    async def update_website_html(
+        self, 
+        website_id: str,
+        owner_id: str,  # SECURITY: Required for authorization
+        html: str,
+        page: str = "index.html"
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Update website HTML content by ID (with owner verification).
+        
+        SECURITY: Requires owner_id to prevent unauthorized modifications.
+        
+        Args:
+            website_id: Website UUID
+            owner_id: Owner user ID (for authorization)
+            html: The new HTML content
+            page: Page name (default: index.html)
+        
+        Returns:
+            Updated website or None if not found/unauthorized
+        """
+        if not self.is_configured():
+            return None
+        
+        # Clean editor artifacts from HTML before saving
+        import re
+        import bleach
+        
+        cleaned_html = html
+        cleaned_html = re.sub(r'<style id="laxizen-editor-styles">.*?</style>', '', cleaned_html, flags=re.DOTALL)
+        cleaned_html = re.sub(r'<script src="/scripts/editor-agent\.js"></script>', '', cleaned_html)
+        cleaned_html = re.sub(r'\s+class="([^"]*)\blx-selected\b([^"]*)"', lambda m: f' class="{m.group(1)}{m.group(2)}"'.replace('  ', ' ').strip(), cleaned_html)
+        cleaned_html = re.sub(r'\s+class="\s*"', '', cleaned_html)
+        
+        # SECURITY: Sanitize HTML to prevent XSS
+        # Allow common HTML tags needed for website content
+        ALLOWED_TAGS = [
+            'html', 'head', 'body', 'title', 'meta', 'link', 'style',
+            'header', 'footer', 'nav', 'main', 'section', 'article', 'aside',
+            'div', 'span', 'p', 'br', 'hr',
+            'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+            'a', 'img', 'picture', 'source', 'figure', 'figcaption',
+            'ul', 'ol', 'li', 'dl', 'dt', 'dd',
+            'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption',
+            'form', 'input', 'textarea', 'button', 'select', 'option', 'label',
+            'strong', 'em', 'b', 'i', 'u', 's', 'mark', 'small', 'sub', 'sup',
+            'blockquote', 'pre', 'code', 'cite', 'abbr', 'address', 'time',
+            'video', 'audio', 'iframe', 'embed', 'object', 'svg', 'path',
+            'noscript', 'template'
+        ]
+        
+        ALLOWED_ATTRS = {
+            '*': ['class', 'id', 'style', 'data-*', 'aria-*', 'role', 'tabindex', 'title', 'lang', 'dir'],
+            'a': ['href', 'target', 'rel', 'download'],
+            'img': ['src', 'alt', 'width', 'height', 'loading', 'srcset', 'sizes'],
+            'source': ['src', 'srcset', 'type', 'media', 'sizes'],
+            'video': ['src', 'poster', 'controls', 'autoplay', 'muted', 'loop', 'playsinline', 'width', 'height'],
+            'audio': ['src', 'controls', 'autoplay', 'muted', 'loop'],
+            'iframe': ['src', 'width', 'height', 'frameborder', 'allowfullscreen', 'loading'],  # SECURITY: VULN-M03 - Removed 'allow' to prevent dangerous permissions
+            'form': ['action', 'method', 'enctype', 'name', 'target', 'autocomplete'],
+            'input': ['type', 'name', 'value', 'placeholder', 'required', 'disabled', 'checked', 'min', 'max', 'pattern', 'autocomplete'],
+            'textarea': ['name', 'placeholder', 'required', 'disabled', 'rows', 'cols'],
+            'button': ['type', 'name', 'value', 'disabled'],
+            'select': ['name', 'required', 'disabled', 'multiple'],
+            'option': ['value', 'selected', 'disabled'],
+            'label': ['for'],
+            'meta': ['charset', 'name', 'content', 'http-equiv', 'property'],
+            'link': ['href', 'rel', 'type', 'media', 'sizes', 'as', 'crossorigin'],
+            'svg': ['xmlns', 'viewBox', 'fill', 'stroke', 'width', 'height'],
+            'path': ['d', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin'],
+            'time': ['datetime'],
+            'td': ['colspan', 'rowspan', 'headers'],
+            'th': ['colspan', 'rowspan', 'scope', 'headers'],
+        }
+        
+        # Sanitize - this removes script tags and malicious onclick/onerror handlers
+        cleaned_html = bleach.clean(
+            cleaned_html,
+            tags=ALLOWED_TAGS,
+            attributes=ALLOWED_ATTRS,
+            strip=True
+        )
+        
+        updates = {
+            "html": cleaned_html,
+            "updated_at": datetime.utcnow().isoformat()
+        }
+        
+        # SECURITY: Only update if website belongs to owner
         response = self.client.table("websites")\
             .update(updates)\
             .eq("id", website_id)\
@@ -1017,6 +1116,102 @@ class SupabaseService:
         if response.data:
             return response.data[0]
         return updates
+    
+    # ========================================
+    # DYNAMIC CONFIG METHODS
+    # ========================================
+    
+    async def get_credit_costs_from_db(self) -> Dict[str, int]:
+        """
+        Fetch credit costs from the database.
+        Falls back to hardcoded CREDIT_COSTS if table doesn't exist.
+        """
+        if not self.is_configured():
+            return CREDIT_COSTS
+        
+        try:
+            response = self.client.table("credit_costs")\
+                .select("action, cost")\
+                .eq("is_active", True)\
+                .execute()
+            
+            if response.data:
+                return {row["action"]: row["cost"] for row in response.data}
+            return CREDIT_COSTS
+        except Exception as e:
+            print(f"Error fetching credit costs from DB: {e}")
+            return CREDIT_COSTS
+    
+    async def get_payment_links(self, market: str = "GLOBAL") -> Optional[Dict[str, Any]]:
+        """
+        Fetch payment link for a specific market.
+        
+        Args:
+            market: Market code ('IN', 'GLOBAL', etc.)
+        
+        Returns:
+            Payment link data or None
+        """
+        if not self.is_configured():
+            return None
+        
+        try:
+            response = self.client.table("payment_links")\
+                .select("*")\
+                .eq("market", market.upper())\
+                .eq("is_active", True)\
+                .limit(1)\
+                .execute()
+            
+            if response.data and len(response.data) > 0:
+                return response.data[0]
+            return None
+        except Exception as e:
+            print(f"Error fetching payment links: {e}")
+            return None
+    
+    async def get_all_payment_links(self) -> List[Dict[str, Any]]:
+        """Fetch all active payment links."""
+        if not self.is_configured():
+            return []
+        
+        try:
+            response = self.client.table("payment_links")\
+                .select("*")\
+                .eq("is_active", True)\
+                .execute()
+            
+            return response.data or []
+        except Exception as e:
+            print(f"Error fetching all payment links: {e}")
+            return []
+    
+    async def update_payment_link(
+        self, 
+        market: str, 
+        payment_url: str,
+        amount: Optional[float] = None
+    ) -> bool:
+        """Update a payment link URL (admin function)."""
+        if not self.is_configured():
+            return False
+        
+        try:
+            updates = {
+                "payment_url": payment_url,
+                "updated_at": datetime.utcnow().isoformat()
+            }
+            if amount is not None:
+                updates["amount"] = amount
+            
+            self.client.table("payment_links")\
+                .update(updates)\
+                .eq("market", market.upper())\
+                .execute()
+            return True
+        except Exception as e:
+            print(f"Error updating payment link: {e}")
+            return False
 
 
 # Global instance

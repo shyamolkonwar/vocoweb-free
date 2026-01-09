@@ -45,7 +45,8 @@ class VoiceGenerateResponse(BaseModel):
 @router.post("/voice/transcribe", response_model=TranscribeResponse)
 async def transcribe_voice(
     audio: UploadFile = File(...),
-    language: str = Form(default="auto")
+    language: str = Form(default="auto"),
+    user: AuthUser = Depends(require_auth)  # SECURITY: Require auth
 ):
     """
     Transcribe audio to text.
@@ -55,7 +56,7 @@ async def transcribe_voice(
     """
     settings = get_settings()
     
-    # Validate file type
+    # Validate file type (client-provided, can be spoofed)
     content_type = audio.content_type or ""
     if not is_supported_format(content_type):
         raise HTTPException(
@@ -67,7 +68,28 @@ async def transcribe_voice(
     try:
         audio_data = await audio.read()
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to read audio: {str(e)}")
+        raise HTTPException(status_code=400, detail="Failed to read audio file")
+    
+    # SECURITY: Validate actual file content (magic bytes) to prevent MIME spoofing
+    try:
+        import magic
+        actual_type = magic.from_buffer(audio_data[:2048], mime=True)
+        allowed_audio_types = [
+            "audio/", "video/webm", "video/mp4", "application/octet-stream"
+        ]
+        if not any(actual_type.startswith(t) for t in allowed_audio_types):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid file content. Expected audio, got {actual_type}"
+            )
+    except ImportError:
+        # SECURITY: VULN-08 fix - Require python-magic, don't skip validation
+        raise HTTPException(
+            status_code=503,
+            detail="File validation unavailable. Please try again later."
+        )
+    except Exception as e:
+        print(f"[Voice] Magic validation error: {e}")
     
     # Check file size (max 25MB for Whisper)
     if len(audio_data) > 25 * 1024 * 1024:
@@ -83,7 +105,8 @@ async def transcribe_voice(
             api_key=settings.openai_api_key
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
+        print(f"Transcription error: {e}")  # SECURITY: Log internally
+        raise HTTPException(status_code=500, detail="Transcription failed. Please try again.")
     
     # Normalize text
     normalized = normalize_text(result.text, result.language)
@@ -99,7 +122,8 @@ async def transcribe_voice(
 @router.post("/voice/generate", response_model=VoiceGenerateResponse)
 async def voice_to_website(
     audio: UploadFile = File(...),
-    language: str = Form(default="auto")
+    language: str = Form(default="auto"),
+    user: AuthUser = Depends(require_auth)  # SECURITY: Require auth
 ):
     """
     Generate website from voice input.
@@ -139,7 +163,8 @@ async def voice_to_website(
             api_key=settings.openai_api_key
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
+        print(f"Transcription error: {e}")  # SECURITY: Log internally
+        raise HTTPException(status_code=500, detail="Transcription failed. Please try again.")
     
     # Step 2: Normalize text
     normalized = normalize_text(transcription.text, transcription.language)
@@ -169,7 +194,9 @@ async def voice_to_website(
         html = build_website(business, layout, detected_lang)
         
         # Generate ID and save
-        website_id = f"voice_{int(datetime.now().timestamp())}_{os.urandom(4).hex()}"
+        # SECURITY: VULN-09 fix - Use UUID4 for unpredictable IDs
+        import uuid
+        website_id = f"site_{uuid.uuid4().hex}"
         
         website_data = {
             "id": website_id,
@@ -196,7 +223,8 @@ async def voice_to_website(
         )
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Website generation failed: {str(e)}")
+        print(f"Voice generation error: {e}")  # SECURITY: Log internally
+        raise HTTPException(status_code=500, detail="Website generation failed. Please try again.")
 
 
 class AsyncVoiceGenerateResponse(BaseModel):

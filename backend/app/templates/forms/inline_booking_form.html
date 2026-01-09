@@ -140,7 +140,7 @@
 </div>
 
 <script>
-    const INLINE_API_URL = '{{ api_url | default("https://api.vocoweb.in") }}';
+    const INLINE_API_URL = '{{ api_url | default("") }}';
 
     async function submitInlineForm(event) {
         event.preventDefault();

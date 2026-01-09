@@ -1,0 +1,84 @@
+<!-- Gallery_Masonry_Focus -->
+<!-- Collage of images that fit together like a puzzle, click to expand (Lightbox) -->
+<!-- Best for: Photographers, Makeup Artists, Event Planners -->
+<!-- Variables: section_title, images[], primary_color -->
+
+<section id="gallery" class="py-20 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-6">
+        <!-- Section Header -->
+        <div class="text-center max-w-2xl mx-auto mb-12">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                {{ section_title | default("Our Work") }}
+            </h2>
+            <p class="text-lg text-gray-600">
+                {{ section_subtitle | default("A showcase of our finest projects.") }}
+            </p>
+        </div>
+
+        <!-- Masonry Gallery -->
+        <div class="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+            {% for image in images %}
+            <div class="break-inside-avoid group cursor-pointer"
+                onclick="openLightbox('{{ image.src }}', '{{ image.caption | default('') }}')">
+                <div class="relative overflow-hidden rounded-xl">
+                    <img src="{{ image.src }}" alt="{{ image.caption | default('Gallery image') }}"
+                        class="w-full object-cover group-hover:scale-110 transition-transform duration-500">
+
+                    <!-- Overlay on hover -->
+                    <div
+                        class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center">
+                        <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                {% if image.caption %}
+                <p class="mt-2 text-sm text-gray-500">{{ image.caption }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Lightbox Modal -->
+<div id="lightbox" class="fixed inset-0 z-50 hidden bg-black/95 flex items-center justify-center"
+    onclick="closeLightbox()">
+    <button
+        class="absolute top-4 right-4 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+    </button>
+    <div class="max-w-5xl max-h-[90vh] px-4" onclick="event.stopPropagation()">
+        <img id="lightbox-image" src="" alt="" class="max-w-full max-h-[80vh] object-contain rounded-lg">
+        <p id="lightbox-caption" class="text-center text-white/80 mt-4"></p>
+    </div>
+</div>
+
+<script>
+    function openLightbox(src, caption) {
+        const lightbox = document.getElementById('lightbox');
+        const image = document.getElementById('lightbox-image');
+        const captionEl = document.getElementById('lightbox-caption');
+
+        image.src = src;
+        captionEl.textContent = caption;
+        lightbox.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+        const lightbox = document.getElementById('lightbox');
+        lightbox.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeLightbox();
+    });
+</script>

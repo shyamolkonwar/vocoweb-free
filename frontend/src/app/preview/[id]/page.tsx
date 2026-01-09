@@ -1,11 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Smartphone, Monitor, Tablet, RefreshCw, Rocket, Mic, Send } from 'lucide-react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft, Smartphone, Monitor, Tablet, Pencil, Rocket, Mic, Send } from 'lucide-react';
 import AuthModal from '@/components/auth/AuthModal';
 import PublishSuccessModal from '@/components/PublishSuccessModal';
+import UpgradeModal from '@/components/UpgradeModal';
 import { useAuth } from '@/context/AuthContext';
+
+const PUBLISH_COST = 30; // Must match backend CREDIT_COSTS['publish']
 
 const content = {
     en: {
@@ -13,7 +16,7 @@ const content = {
         mobile: "Mobile",
         tablet: "Tablet",
         desktop: "Desktop",
-        regenerate: "Regenerate",
+        edit: "Edit",
         publish: "Publish",
         published: "Published",
         republish: "Republish",
@@ -34,7 +37,7 @@ const content = {
         mobile: "Mobile",
         tablet: "Tablet",
         desktop: "Desktop",
-        regenerate: "फिर से",
+        edit: "Edit",
         publish: "Publish",
         published: "Published",
         republish: "Republish",
@@ -158,18 +161,40 @@ export default function PreviewStudioPage() {
     const [publishData, setPublishData] = useState<PublishData | null>(null);
     const [showPublishModal, setShowPublishModal] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [userCredits, setUserCredits] = useState<number>(0);
     const [copied, setCopied] = useState(false);
     const [error, setError] = useState('');
     const [currentPage, setCurrentPage] = useState('index.html');
     const [aiPrompt, setAiPrompt] = useState('');
 
     const { isAuthenticated, getAccessToken } = useAuth();
+    const searchParams = useSearchParams();
+    const market = (searchParams.get('market') || 'GLOBAL').toUpperCase() as 'IN' | 'GLOBAL';
     const t = content[language];
 
     useEffect(() => {
         fetchPreview();
         checkPublishStatus();
-    }, [id]);
+        if (isAuthenticated) {
+            fetchUserCredits();
+        }
+    }, [id, isAuthenticated]);
+
+    const fetchUserCredits = async () => {
+        try {
+            const token = getAccessToken();
+            const response = await fetch('/api/websites/credits', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setUserCredits(data.balance || 0);
+            }
+        } catch (err) {
+            console.error('Failed to fetch credits:', err);
+        }
+    };
 
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
@@ -191,7 +216,10 @@ export default function PreviewStudioPage() {
 
     const fetchPreview = async () => {
         try {
-            const response = await fetch(`/api/preview/${id}`);
+            const token = getAccessToken();
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000'}/api/preview/${id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             const data = await response.json();
             if (response.ok) {
                 setWebsiteData(data);
@@ -207,7 +235,10 @@ export default function PreviewStudioPage() {
 
     const checkPublishStatus = async () => {
         try {
-            const response = await fetch(`/api/publish/${id}/status`);
+            const token = getAccessToken();
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000'}/api/publish/${id}/status`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             const data = await response.json();
             if (data.published) {
                 setPublishData({
@@ -224,7 +255,11 @@ export default function PreviewStudioPage() {
     const handleRegenerate = async () => {
         setRegenerating(true);
         try {
-            const response = await fetch(`/api/regenerate/${id}`, { method: 'POST' });
+            const token = getAccessToken();
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000'}/api/regenerate/${id}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             const data = await response.json();
             if (response.ok) {
                 setWebsiteData(data);
@@ -265,6 +300,9 @@ export default function PreviewStudioPage() {
                 setShowPublishModal(true);
             } else if (response.status === 401) {
                 setShowAuthModal(true);
+            } else if (response.status === 402) {
+                // Insufficient credits - show upgrade modal
+                setShowUpgradeModal(true);
             } else {
                 setError(data.detail || 'Failed to publish');
             }
@@ -337,7 +375,7 @@ export default function PreviewStudioPage() {
                         <span>{t.back}</span>
                     </button>
                     <div className="topbar-url-badge">
-                        {publishData?.subdomain || siteSlug}.vocoweb.in
+                        {publishData?.url ? publishData.url.replace(/^https?:\/\//, '') : siteSlug}
                     </div>
                 </div>
 
@@ -369,12 +407,11 @@ export default function PreviewStudioPage() {
                 {/* Actions */}
                 <div className="topbar-actions">
                     <button
-                        onClick={handleRegenerate}
-                        disabled={regenerating}
+                        onClick={() => router.push(`/editor/${id}`)}
                         className="topbar-action-btn ghost"
                     >
-                        <RefreshCw size={16} className={regenerating ? 'spinning' : ''} />
-                        <span>{t.regenerate}</span>
+                        <Pencil size={16} />
+                        <span>{t.edit}</span>
                     </button>
                     <button
                         onClick={handlePublish}
@@ -466,6 +503,15 @@ export default function PreviewStudioPage() {
                     mode="save"
                 />
             )}
+
+            {/* Upgrade Modal (Insufficient Credits) */}
+            <UpgradeModal
+                isOpen={showUpgradeModal}
+                onClose={() => setShowUpgradeModal(false)}
+                currentCredits={userCredits}
+                requiredCredits={PUBLISH_COST}
+                market={market}
+            />
         </div>
     );
 }

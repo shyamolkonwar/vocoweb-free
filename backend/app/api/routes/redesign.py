@@ -74,9 +74,13 @@ STYLE_CONFIGS = {
 
 
 @router.post("/redesign/scrape", response_model=ScrapeResponse)
-async def scrape_for_redesign(request: ScrapeRequest):
+async def scrape_for_redesign(
+    request: ScrapeRequest,
+    user: AuthUser = Depends(require_auth)  # SECURITY: VULN-02 fix - Require auth
+):
     """
     Scrape a website to preview content before redesign.
+    Requires authentication to prevent SSRF abuse.
     
     Returns structured content that will be used for redesign.
     """
@@ -103,7 +107,8 @@ async def scrape_for_redesign(request: ScrapeRequest):
     except ScrapeError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Scraping failed: {str(e)}")
+        print(f"Scraping error: {e}")  # SECURITY: Log internally
+        raise HTTPException(status_code=500, detail="Scraping failed. Please try again.")
 
 
 @router.post("/redesign/generate", response_model=RedesignResponse)
@@ -167,7 +172,9 @@ async def generate_redesign(
         html = build_website(business, layout, request.language)
         
         # Step 6: Store
-        website_id = f"redesign_{int(datetime.now().timestamp())}_{os.urandom(4).hex()}"
+        # SECURITY: VULN-09 fix - Use UUID4 for unpredictable IDs
+        import uuid
+        website_id = f"site_{uuid.uuid4().hex}"
         
         website_data = {
             "id": website_id,
@@ -200,7 +207,8 @@ async def generate_redesign(
     except ScrapeError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Redesign failed: {str(e)}")
+        print(f"Redesign error: {e}")  # SECURITY: Log internally
+        raise HTTPException(status_code=500, detail="Redesign failed. Please try again.")
 
 
 @router.get("/redesign/styles")

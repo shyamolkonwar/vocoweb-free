@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/utils/supabase/server';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
@@ -9,7 +10,22 @@ export async function GET(
     try {
         const { id } = await params;
 
-        const response = await fetch(`${BACKEND_URL}/api/edit/${id}/sections`);
+        // Get auth token from Supabase session
+        const supabase = await createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session?.access_token) {
+            return NextResponse.json(
+                { error: 'Authentication required' },
+                { status: 401 }
+            );
+        }
+
+        const response = await fetch(`${BACKEND_URL}/api/edit/${id}/sections`, {
+            headers: {
+                'Authorization': `Bearer ${session.access_token}`,
+            }
+        });
         const data = await response.json();
 
         if (response.ok) {
@@ -37,9 +53,23 @@ export async function PATCH(
         const { id } = await params;
         const body = await request.json();
 
+        // Get auth token from Supabase session
+        const supabase = await createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session?.access_token) {
+            return NextResponse.json(
+                { error: 'Authentication required' },
+                { status: 401 }
+            );
+        }
+
         const response = await fetch(`${BACKEND_URL}/api/edit/${id}/section`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`,
+            },
             body: JSON.stringify(body)
         });
 
@@ -79,9 +109,23 @@ export async function PUT(
             );
         }
 
+        // Get auth token from Supabase session
+        const supabase = await createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session?.access_token) {
+            return NextResponse.json(
+                { error: 'Authentication required' },
+                { status: 401 }
+            );
+        }
+
         const response = await fetch(`${BACKEND_URL}/api/edit/${id}/html`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`,
+            },
             body: JSON.stringify({ html, page: page || 'index.html' })
         });
 
@@ -103,3 +147,4 @@ export async function PUT(
         );
     }
 }
+

@@ -1,0 +1,100 @@
+<!-- Feature_ZigZag_List -->
+<!-- Stacked rows alternating: Image Left/Text Right, then Text Left/Image Right -->
+<!-- Best for: Construction, Interior Design, Personal Trainers -->
+<!-- Variables: section_title, features[], primary_color -->
+
+<section id="services" class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-6">
+        <!-- Section Header -->
+        <div class="text-center max-w-2xl mx-auto mb-20">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                {{ section_title | default("What We Do") }}
+            </h2>
+            <p class="text-lg text-gray-600">
+                {{ section_subtitle | default("Comprehensive solutions tailored to your needs.") }}
+            </p>
+        </div>
+
+        <!-- ZigZag Features -->
+        <div class="space-y-24">
+            {% for feature in features %}
+            <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                <!-- Image -->
+                <div class="{% if loop.index is odd %}order-1{% else %}order-1 lg:order-2{% endif %}">
+                    <div class="relative">
+                        <div class="rounded-2xl overflow-hidden shadow-2xl">
+                            {% if feature.image %}
+                            <img src="{{ feature.image }}" alt="{{ feature.title }}"
+                                class="w-full aspect-[4/3] object-cover">
+                            {% else %}
+                            <div
+                                class="w-full aspect-[4/3] bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                                <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <!-- Decorative element -->
+                        <div class="absolute -z-10 {% if loop.index is odd %}-bottom-4 -right-4{% else %}-bottom-4 -left-4{% endif %} w-full h-full rounded-2xl"
+                            style="background: {{ primary_color }}20;"></div>
+                    </div>
+                </div>
+
+                <!-- Text Content -->
+                <div class="{% if loop.index is odd %}order-2{% else %}order-2 lg:order-1{% endif %}">
+                    <div class="space-y-6">
+                        <!-- Number badge -->
+                        <div class="inline-flex items-center justify-center w-12 h-12 rounded-full text-lg font-bold text-white"
+                            style="background: {{ primary_color }};">
+                            {{ loop.index }}
+                        </div>
+
+                        <!-- Title -->
+                        <h3 class="text-2xl md:text-3xl font-bold text-gray-900">
+                            {{ feature.title }}
+                        </h3>
+
+                        <!-- Description -->
+                        <p class="text-gray-600 leading-relaxed text-lg">
+                            {{ feature.description }}
+                        </p>
+
+                        <!-- Features list -->
+                        {% if feature.points %}
+                        <ul class="space-y-3">
+                            {% for point in feature.points %}
+                            <li class="flex items-start gap-3">
+                                <svg class="w-5 h-5 mt-0.5 flex-shrink-0" style="color: {{ primary_color }};"
+                                    fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                                <span class="text-gray-700">{{ point }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+
+                        <!-- CTA -->
+                        {% if feature.cta_text %}
+                        <a href="{{ feature.cta_link | default('#contact') }}"
+                            class="inline-flex items-center gap-2 font-semibold transition-all hover:gap-3"
+                            style="color: {{ primary_color }};">
+                            {{ feature.cta_text }}
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                            </svg>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>

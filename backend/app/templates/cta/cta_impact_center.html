@@ -1,0 +1,49 @@
+<!-- CTA_Impact_Center -->
+<!-- Large colored container with massive headline and one big button -->
+<!-- Best for: Bottom of every page -->
+<!-- Variables: headline, subheadline, cta_text, primary_color, accent_color -->
+
+<section class="py-20">
+    <div class="max-w-7xl mx-auto px-6">
+        <div class="relative overflow-hidden rounded-3xl py-16 md:py-24 px-8 md:px-16"
+            style="background: linear-gradient(135deg, {{ primary_color }}, {{ accent_color | default(primary_color) }});">
+
+            <!-- Decorative elements -->
+            <div class="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10 bg-white blur-3xl"></div>
+            <div class="absolute bottom-0 left-0 w-48 h-48 rounded-full opacity-10 bg-white blur-2xl"></div>
+
+            <!-- Content -->
+            <div class="relative z-10 text-center max-w-3xl mx-auto">
+                <!-- Headline -->
+                <h2 class="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+                    {{ headline | default("Ready to Get Started?") }}
+                </h2>
+
+                <!-- Subheadline -->
+                {% if subheadline %}
+                <p class="text-lg md:text-xl text-white/80 mb-10 max-w-xl mx-auto">
+                    {{ subheadline }}
+                </p>
+                {% endif %}
+
+                <!-- CTA Button -->
+                <a href="{{ cta_link | default('#contact') }}"
+                    class="inline-flex items-center gap-3 px-10 py-5 rounded-2xl font-bold text-lg shadow-2xl hover:shadow-xl hover:scale-105 transition-all duration-300 bg-white"
+                    style="color: {{ primary_color }};">
+                    {{ cta_text | default("Let's Talk") }}
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                </a>
+
+                <!-- Optional secondary info -->
+                {% if secondary_text %}
+                <p class="mt-6 text-white/60 text-sm">
+                    {{ secondary_text }}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>

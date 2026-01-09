@@ -62,6 +62,17 @@ def verify_jwt(token: str) -> AuthUser:
     settings = get_settings()
     errors = []
     
+    # Early validation: JWT must have 3 segments separated by dots
+    if not token or token.count('.') != 2:
+        print(f"Auth middleware: Invalid token format (segments: {token.count('.') if token else 0})")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token format"
+        )
+    
+    # Clean the token (remove any whitespace)
+    token = token.strip()
+    
     # Try JWKS verification first (supports ES256/RS256)
     jwks = get_jwks()
     if jwks:
@@ -83,9 +94,12 @@ def verify_jwt(token: str) -> AuthUser:
             except Exception as e:
                 errors.append(f"{alg}: {str(e)}")
     
-    # Try HS256 with JWT secret as fallback
+    # Try HS256 with JWT secret as fallback (DISABLED in production for security)
+    # SECURITY: HS256 with shared secret is less secure than RS256/ES256
     jwt_secret = getattr(settings, "supabase_jwt_secret", None) or os.getenv("SUPABASE_JWT_SECRET")
-    if jwt_secret:
+    is_production = getattr(settings, "is_production", False)
+    
+    if jwt_secret and not is_production:  # Only allow HS256 in development
         try:
             payload = jwt.decode(
                 token,
@@ -93,7 +107,7 @@ def verify_jwt(token: str) -> AuthUser:
                 algorithms=["HS256"],
                 audience="authenticated"
             )
-            print("Auth middleware: Verified token with HS256")
+            print("Auth middleware: Verified token with HS256 (dev mode)")
             return AuthUser(
                 id=payload["sub"],
                 email=payload.get("email", ""),
@@ -102,12 +116,22 @@ def verify_jwt(token: str) -> AuthUser:
         except Exception as e:
             errors.append(f"HS256: {str(e)}")
     
-    # All methods failed
+    # All methods failed - MEDIUM-009: Track auth failures for account lockout
     error_msg = " | ".join(errors) if errors else "No verification methods available"
     print(f"Auth middleware: All verification failed: {error_msg}")
+    
+    # Track failed auth attempt for potential lockout (abuse detection)
+    try:
+        from app.core.rate_limit import upstash_rate_limiter
+        # Extract partial token ID for tracking (don't store full token)
+        partial_id = token[:16] if len(token) > 16 else "unknown"
+        upstash_rate_limiter.track_abuse_signal(partial_id, "auth_failures", ttl_seconds=3600)
+    except Exception:
+        pass  # Don't fail on tracking errors
+    
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail=f"Invalid token: {error_msg}"
+        detail="Authentication failed"  # Generic message for security
     )
 
 
@@ -129,18 +153,20 @@ async def get_current_user(
 
 
 async def require_auth(
-    authorization: Optional[str] = Header(None)
+    authorization: Optional[str] = Header(None),
+    x_authorization: Optional[str] = Header(None, alias="X-Authorization")
 ) -> AuthUser:
     """Dependency that requires authentication."""
-    if not authorization:
-        print("Auth middleware: No Authorization header")
+    auth_header = authorization or x_authorization
+    if not auth_header:
+        print(f"Auth middleware: No Authorization header (auth={authorization}, x_auth={x_authorization})")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing Authorization header",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    scheme, param = get_authorization_scheme_param(authorization)
+
+    scheme, param = get_authorization_scheme_param(auth_header)
     if scheme.lower() != "bearer":
         print(f"Auth middleware: Invalid scheme '{scheme}'")
         raise HTTPException(
@@ -148,7 +174,7 @@ async def require_auth(
             detail="Invalid authentication scheme",
             headers={"WWW-Authenticate": "Bearer"},
         )
-        
+
     return verify_jwt(param)
 
 
