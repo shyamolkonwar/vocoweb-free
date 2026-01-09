@@ -463,7 +463,7 @@ Please make sure to update tests as appropriate.
 
 Distributed under the MIT License. See [LICENSE](./LICENSE) for more information.
 
-Copyright (c) 2024 Shyamol Konwar.
+Copyright (c) 2026 Shyamol Konwar & Fusion Focus.
 
 ---
 
